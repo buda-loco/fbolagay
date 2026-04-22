@@ -1,0 +1,10 @@
+# Private design assets and deliverables — not for public hosting
+uploads/
+
+# macOS
+.DS_Store
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db

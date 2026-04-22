@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0f1a3d" />
+<meta name="description" content="Fer Bolagay — finanzas personales, mentoría y educación financiera. Sitio nuevo en camino. Escribime por email, Instagram o WhatsApp." />
+<meta property="og:title" content="Fer Bolagay — Próximamente" />
+<meta property="og:description" content="Estoy armando un nuevo espacio para hablar de finanzas personales, mentoría y educación financiera. Mientras tanto, seguimos en contacto." />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_AR" />
+<meta name="twitter:card" content="summary_large_image" />
+<title>Fer Bolagay — Próximamente</title>
+<link rel="icon" type="image/png" href="assets/logo-symbol.png" />
+<link rel="apple-touch-icon" href="assets/logo-symbol.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1a3d;
+    --navy-2: #162351;
+    --navy-line: rgba(255,255,255,0.08);
+    --lilac: #c9b0f5;
+    --lilac-soft: #e4d6ff;
+    --yellow: #ffd43b;
+    --ink: #0b1330;
+    --paper: #f6f3ee;
+    --muted: rgba(255,255,255,0.64);
+    --muted-2: rgba(255,255,255,0.42);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* subtle grain + orb */
+  .bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  /* gradients + grid lines removed per feedback */
+
+  /* ---------- PATTERN MARQUEES ---------- */
+  .pattern-marquee {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.9;
+  }
+  .pm-right {
+    top: 0; right: 0;
+    width: 240px;
+    height: 100vh;
+    -webkit-mask-image: linear-gradient(to left, #000 62%, transparent 100%);
+            mask-image: linear-gradient(to left, #000 62%, transparent 100%);
+  }
+  .pm-bottom {
+    left: 0; bottom: 0;
+    height: 110px;
+    width: 100vw;
+    display: none; /* shown on mobile via JS */
+    -webkit-mask-image: linear-gradient(to top, #000 60%, transparent 100%);
+            mask-image: linear-gradient(to top, #000 60%, transparent 100%);
+  }
+
+  .shell {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 32px clamp(20px, 5vw, 72px) 28px;
+  }
+  /* Above the mobile/right-marquee breakpoint, reserve room on the right
+     so the vertical pattern strip never sits on top of content. */
+  @media (min-width: 701px) {
+    .shell { padding-right: clamp(240px, 18vw, 280px); }
+  }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px;
+  }
+  .logo-mark {
+    display: inline-flex; align-items: center; gap: 14px;
+  }
+  .logo-mark img { height: 56px; width: auto; display: block; filter: brightness(0) invert(1); }
+  .status {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--yellow);
+    box-shadow: 0 0 0 4px rgba(255,212,59,0.18);
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255,212,59,0.18); }
+    50%      { box-shadow: 0 0 0 8px rgba(255,212,59,0.04); }
+  }
+
+  /* MAIN */
+  main {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+    padding: clamp(40px, 8vh, 96px) 0;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; gap: 48px; padding-top: 48px; }
+  }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    background: rgba(201,176,245,0.12);
+    border: 1px solid rgba(201,176,245,0.28);
+    border-radius: 999px;
+    color: var(--lilac-soft);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .eyebrow::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--lilac);
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: clamp(54px, 8.4vw, 128px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin: 24px 0 20px;
+  }
+  h1 .ital { font-style: italic; color: var(--lilac); }
+  h1 .small { display: block; font-size: 0.46em; font-style: italic; color: var(--muted); letter-spacing: 0; margin-top: 8px; }
+
+  .lede {
+    max-width: 44ch;
+    color: var(--muted);
+    font-size: clamp(16px, 1.25vw, 19px);
+    line-height: 1.55;
+    margin: 0 0 40px;
+  }
+  .lede strong { color: #fff; font-weight: 500; }
+
+  .cta-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-top: 8px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    font-size: 15px; font-weight: 500;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .btn-primary {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+  .btn-primary:hover { transform: translateY(-1px); background: #ffdc5e; }
+  .btn-blue {
+    background: #3a5bf0;
+    color: #fff;
+  }
+  .btn-blue:hover { transform: translateY(-1px); background: #4a6bff; box-shadow: 0 6px 20px rgba(58,91,240,0.35); }
+  .btn-ghost {
+    background: transparent;
+    color: #fff;
+    border-color: rgba(255,255,255,0.22);
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.04); }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* CONTACT CARD */
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border: 1px solid var(--navy-line);
+    border-radius: 20px;
+    padding: 28px;
+    backdrop-filter: blur(8px);
+  }
+  .card-label {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted-2);
+    margin-bottom: 18px;
+  }
+  .contact-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+  }
+  .contact-list li + li { border-top: 1px solid var(--navy-line); }
+  .contact-list a {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 4px;
+    color: #fff;
+    text-decoration: none;
+    transition: padding-left 0.2s ease, color 0.2s ease;
+  }
+  .contact-list a:hover { padding-left: 12px; }
+  .contact-list a:hover .icon { background: var(--lilac); color: var(--ink); border-color: var(--lilac); }
+  .contact-list a:hover .arrow { transform: translateX(4px); color: var(--lilac); }
+  .icon {
+    flex: 0 0 44px; height: 44px;
+    display: grid; place-items: center;
+    background: rgba(201,176,245,0.10);
+    border: 1px solid rgba(201,176,245,0.22);
+    border-radius: 12px;
+    color: var(--lilac);
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .icon svg { width: 20px; height: 20px; }
+  .contact-text { flex: 1; min-width: 0; }
+  .contact-text .kind {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted-2);
+    margin-bottom: 2px;
+  }
+  .contact-text .value {
+    font-size: 16px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .arrow {
+    color: var(--muted-2);
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex: 0 0 auto;
+  }
+
+  .card-note {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--navy-line);
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* FOOTER */
+  footer {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+    padding-top: 24px;
+    border-top: 1px solid var(--navy-line);
+    color: var(--muted-2);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  footer .tagline { font-style: italic; color: var(--muted); }
+
+  /* ---------- HAND-DRAWN ANNOTATIONS ---------- */
+  .annotate {
+    --hl: #ffe14a;       /* highlighter yellow */
+    --hl-deep: #f5c400;  /* second pass, slightly deeper */
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;          /* behind text (z=auto/inline), in front of card bg */
+    color: var(--hl);
+    mix-blend-mode: normal;
+  }
+  .annotate svg { display: block; overflow: visible; }
+  .annotate svg path,
+  .annotate svg line,
+  .annotate svg polyline {
+    fill: none;
+    stroke: var(--hl);
+    stroke-width: 10;            /* slimmer marker */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.6;
+    mix-blend-mode: screen;
+    filter: blur(0.3px);
+  }
+  /* second, slightly offset pass to simulate uneven marker pressure */
+  .annotate svg path.pass2,
+  .annotate svg polyline.pass2 {
+    stroke: var(--hl-deep);
+    stroke-width: 5;
+    opacity: 0.4;
+    transform: translate(1px, -0.5px);
+  }
+  .annotate .label {
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #1a2340;
+    background: var(--hl);
+    padding: 2px 10px 4px;
+    border-radius: 2px;
+    box-shadow:
+       -2px 0 0 var(--hl),
+       2px 0 0 var(--hl),
+       0 2px 6px rgba(255,225,74,0.25);
+    transform: rotate(-5deg) skewX(-4deg);
+    opacity: 0.92;
+  }
+
+  /* drawing entrance */
+  @keyframes draw {
+    from { stroke-dashoffset: var(--len, 900); }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes ink-in {
+    from { opacity: 0; transform: translateY(4px) rotate(var(--rot, -5deg)) skewX(-4deg); }
+    to   { opacity: 0.92; transform: translateY(0) rotate(var(--rot, -5deg)) skewX(-4deg); }
+  }
+  .annotate svg path.anim,
+  .annotate svg polyline.anim {
+    stroke-dasharray: var(--len, 900);
+    stroke-dashoffset: var(--len, 900);
+    animation: draw 1.1s cubic-bezier(.6,.1,.3,1) 0.4s forwards;
+  }
+  .annotate svg path.pass2.anim {
+    animation-delay: 0.55s;
+    animation-duration: 0.9s;
+  }
+  .annotate .label {
+    --rot: -5deg;
+    opacity: 0;
+    animation: ink-in 0.45s ease-out 1.35s forwards;
+  }
+
+  /* positioned annotations */
+  .anno-circle {
+    /* sits around the WhatsApp row inside the card */
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .anno-arrow {
+    /* below the Tomar el test button */
+    top: calc(100% + 10px);
+    left: 10px;
+    width: 340px; height: 160px;
+  }
+  .anno-arrow .label {
+    position: absolute;
+    left: 118px;
+    top: 72px;
+  }
+
+  @media (max-width: 900px) {
+    .anno-arrow { left: 0; width: 300px; }
+    .anno-arrow .label { left: 100px; top: 70px; font-size: 28px; }
+    /* Reserve room below the buttons so the highlighter doesn't overlap
+       the contact card that stacks underneath on mobile. */
+    .cta-row { margin-bottom: 140px; }
+  }
+  @media print {
+    .annotate svg path.anim, .annotate svg polyline.anim {
+      stroke-dashoffset: 0 !important;
+      animation: none !important;
+    }
+    .annotate .label { opacity: 1 !important; animation: none !important; }
+  }
+
+  @media (max-width: 700px) {
+    /* Leave room for the fixed horizontal marquee at the bottom on mobile */
+    .shell { padding-bottom: 128px; }
+  }
+  @media (max-width: 560px) {
+    .shell { padding: 24px 20px 128px; }
+    header .status span.label { display: none; }
+    h1 { font-size: clamp(48px, 14vw, 72px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot { animation: none; }
+    .annotate svg path.anim,
+    .annotate svg polyline.anim {
+      stroke-dashoffset: 0 !important;
+      animation: none !important;
+    }
+    .annotate .label { opacity: 0.92 !important; animation: none !important; }
+    .btn, .contact-list a, .contact-list a:hover .arrow { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true"></div>
+
+<canvas id="pat-right" class="pattern-marquee pm-right" aria-hidden="true"></canvas>
+<canvas id="pat-bottom" class="pattern-marquee pm-bottom" aria-hidden="true"></canvas>
+
+<div class="shell">
+
+  <header>
+    <a href="/" class="logo-mark" aria-label="Fer Bolagay">
+      <img src="assets/logo-horizontal.png" alt="Fer Bolagay" />
+    </a>
+    <div class="status" title="Sitio en construcción">
+      <span class="dot"></span>
+      <span class="label">Nuevo sitio en camino</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <span class="eyebrow">Próximamente · 2026</span>
+      <h1>
+        Estamos <span class="ital">armando</span><br/>
+        algo nuevo.
+        <span class="small">Mientras tanto, seguimos en contacto.</span>
+      </h1>
+      <p class="lede">
+        Soy <strong>Fer Bolagay</strong>. Estoy trabajando en un nuevo espacio para
+        hablar de finanzas personales, mentoría y educación financiera.
+        Si querés reservar una sesión, sumarte a una formación o simplemente
+        saludar — escribime por cualquiera de los canales de acá al lado.
+      </p>
+      <div class="cta-row" style="position:relative;">
+        <a class="btn btn-blue" href="https://wa.me/5491176617662?text=Hola%20Fer%2C%20quiero%20tomar%20el%20test%20de%20mi%20relaci%C3%B3n%20con%20el%20dinero" target="_blank" rel="noopener" id="btn-test">
+          Tomar el test
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-primary" href="mailto:hola@ferbolagay.com">
+          Escribime
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="https://instagram.com/fer.bolagay" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
+          Seguime en Instagram
+        </a>
+
+        <!-- highlighter arrow + label pointing at Tomar el test -->
+        <div class="annotate anno-arrow" aria-hidden="true">
+          <svg viewBox="0 0 320 140" width="320" height="140">
+            <!-- main shaft -->
+            <path class="anim" style="--len: 260"
+                  d="M 120 86 C 95 78, 70 60, 58 32"/>
+            <!-- second marker pass -->
+            <path class="anim pass2" style="--len: 260"
+                  d="M 122 88 C 97 79, 71 61, 60 34"/>
+            <!-- arrowhead -->
+            <polyline class="anim" style="--len: 80; animation-delay: 1.0s"
+                      points="46,44 58,28 74,36"/>
+          </svg>
+          <span class="label">Super útil</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card" aria-label="Información de contacto" style="position:relative;">
+      <div class="card-label">Contacto directo</div>
+      <ul class="contact-list">
+        <li>
+          <a href="mailto:hola@ferbolagay.com">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            </span>
+            <span class="contact-text">
+              <div class="kind">Email</div>
+              <div class="value">hola@ferbolagay.com</div>
+            </span>
+            <span class="arrow" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="https://instagram.com/fer.bolagay" target="_blank" rel="noopener">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
+            </span>
+            <span class="contact-text">
+              <div class="kind">Instagram</div>
+              <div class="value">@fer.bolagay</div>
+            </span>
+            <span class="arrow" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+          </a>
+        </li>
+        <li id="row-whatsapp" style="position:relative;">
+          <a href="https://wa.me/5491176617662" target="_blank" rel="noopener">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-4.2-7.6L21 3l-1.4 4.2A9 9 0 0 1 21 12Z"/><path d="M8.5 9.5c.3 2.2 2.8 4.7 5 5l1.2-1.2 2.3 1v2c-1 .7-3 .7-5.3-.6-2.3-1.3-4-3.4-4.7-5.7-.3-1-.3-2 0-2.7L9 7l1 2.3-1.5 1.2"/></svg>
+            </span>
+            <span class="contact-text">
+              <div class="kind">WhatsApp</div>
+              <div class="value">+54 9 11 7661-7662</div>
+            </span>
+            <span class="arrow" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+          </a>
+        </li>
+        <li>
+          <a href="https://youtube.com/@ferbolagay" target="_blank" rel="noopener">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor" stroke="none"/></svg>
+            </span>
+            <span class="contact-text">
+              <div class="kind">PODCASH · YouTube</div>
+              <div class="value">@ferbolagay</div>
+            </span>
+            <span class="arrow" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>
+            </span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- hand-drawn circle around WhatsApp row -->
+      <div class="annotate anno-circle" aria-hidden="true" id="anno-wa"></div>
+
+      <p class="card-note">
+        Respondo mensajes en menos de <strong style="color:#fff;font-weight:500">48 horas</strong>.
+        Para mentorías y formaciones, contame brevemente tu situación y te paso los próximos pasos.
+      </p>
+    </aside>
+  </main>
+
+  <footer>
+    <span>© 2026 Fer Bolagay · Finanzas · Emociones · Resultados</span>
+    <span class="tagline">Nuevo sitio en construcción</span>
+  </footer>
+
+</div>
+
+<script>
+  // Draw a slightly-wobbly circle around the WhatsApp row
+  (function drawWhatsappCircle() {
+    const card = document.querySelector('.card');
+    const row  = document.getElementById('row-whatsapp');
+    const host = document.getElementById('anno-wa');
+    if (!card || !row || !host) return;
+
+    function render() {
+      const cardRect = card.getBoundingClientRect();
+      const rowRect  = row.getBoundingClientRect();
+      const pad = 10;
+      const x = rowRect.left - cardRect.left - pad;
+      const y = rowRect.top  - cardRect.top  - pad;
+      const w = rowRect.width + pad * 2;
+      const h = rowRect.height + pad * 2;
+
+      // hand-drawn ellipse: slightly tilted, slightly irregular, with a small overshoot
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const rx = w / 2;
+      const ry = h / 2;
+      const tilt = -4; // degrees
+
+      // build a path that's almost an ellipse but wobbly
+      function P(a, rxMod = 0, ryMod = 0) {
+        const rad = (a * Math.PI) / 180;
+        const rrx = rx + rxMod;
+        const rry = ry + ryMod;
+        const px = cx + Math.cos(rad) * rrx;
+        const py = cy + Math.sin(rad) * rry;
+        // apply tilt
+        const t = (tilt * Math.PI) / 180;
+        const dx = px - cx, dy = py - cy;
+        return [
+          cx + dx * Math.cos(t) - dy * Math.sin(t),
+          cy + dx * Math.sin(t) + dy * Math.cos(t),
+        ];
+      }
+
+      // start a bit past 0, sweep just over 360 to overshoot like a real pen
+      const pts = [];
+      for (let a = 10; a <= 380; a += 14) {
+        const jitterX = (Math.sin(a * 0.7) * 3);
+        const jitterY = (Math.cos(a * 0.9) * 2);
+        pts.push(P(a, jitterX, jitterY));
+      }
+      const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+
+      // approximate length for dash animation
+      let len = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i][0] - pts[i-1][0];
+        const dy = pts[i][1] - pts[i-1][1];
+        len += Math.hypot(dx, dy);
+      }
+
+      host.innerHTML = `
+        <svg width="${cardRect.width}" height="${cardRect.height}" viewBox="0 0 ${cardRect.width} ${cardRect.height}">
+          <path class="anim" style="--len:${Math.ceil(len)}" d="${d}"/>
+          <path class="anim pass2" style="--len:${Math.ceil(len)}" d="${d}" transform="translate(2,-1)"/>
+        </svg>`;
+    }
+
+    render();
+    window.addEventListener('resize', () => {
+      // debounce
+      clearTimeout(window.__waT);
+      window.__waT = setTimeout(render, 120);
+    });
+  })();
+</script>
+
+<script>
+  // --- Pattern marquee (tiled grid) ---
+  (function patternMarquee() {
+    const PALETTE = ['#E3EA00', '#D5B4FB', '#EFEEEA', '#283287', '#000000', '#ffffff'];
+    // shape kinds per cell. null = empty (lets bg show)
+    const KINDS = ['square','square','square','quarter','quarter','half','circle','empty'];
+    const QC_PATH = new Path2D('M0,0 L0,178.5 L178.5,178.5 C178.5,80 98.5,0 0,0 Z');
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function setupCanvas(cv) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = cv.getBoundingClientRect();
+      cv.width  = Math.max(1, Math.round(r.width  * dpr));
+      cv.height = Math.max(1, Math.round(r.height * dpr));
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, w: r.width, h: r.height };
+    }
+
+    // A cell is: { kind, color, rot } — rot in 0/90/180/270
+    function makeCell() {
+      const kind = pick(KINDS);
+      return {
+        kind,
+        color: pick(PALETTE),
+        rot: pick([0, 90, 180, 270]),
+      };
+    }
+
+    // Build a row of N cells
+    function makeRow(n) {
+      const row = [];
+      for (let i = 0; i < n; i++) row.push(makeCell());
+      return row;
+    }
+
+    function drawCell(ctx, cell, x, y, size) {
+      if (cell.kind === 'empty') return;
+      ctx.save();
+      ctx.translate(x + size / 2, y + size / 2);
+      ctx.rotate((cell.rot * Math.PI) / 180);
+      ctx.translate(-size / 2, -size / 2);
+      ctx.fillStyle = cell.color;
+      if (cell.kind === 'square') {
+        ctx.fillRect(0, 0, size, size);
+      } else if (cell.kind === 'quarter') {
+        const k = size / 178.5;
+        ctx.scale(k, k);
+        ctx.fill(QC_PATH);
+      } else if (cell.kind === 'circle') {
+        ctx.beginPath();
+        ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (cell.kind === 'half') {
+        ctx.beginPath();
+        ctx.arc(size/2, size, size/2, Math.PI, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Lane: a tiled strip that scrolls.
+    // axis='y' -> vertical scroll (bottom->top), cols across width
+    // axis='x' -> horizontal scroll (right->left), rows across height
+    function initLane(canvas, axis) {
+      let { ctx, w, h } = setupCanvas(canvas);
+      let cellSize, cols, rows, offset = 0, strips;
+
+      function rebuild() {
+        if (axis === 'y') {
+          cols = Math.max(1, Math.round(w / 70));
+          cellSize = w / cols;
+          rows = Math.ceil(h / cellSize) + 3; // buffer
+        } else {
+          rows = Math.max(1, Math.round(h / 70));
+          cellSize = h / rows;
+          cols = Math.ceil(w / cellSize) + 3; // buffer
+        }
+        strips = [];
+        // pre-generate enough rows/cols
+        const stripCount = axis === 'y' ? rows : cols;
+        const crossCount = axis === 'y' ? cols : rows;
+        for (let i = 0; i < stripCount; i++) strips.push(makeRow(crossCount));
+        offset = 0;
+      }
+      rebuild();
+
+      const SPEED = 28; // px/s
+      let last = performance.now();
+
+      function frame(now) {
+        const dt = Math.min(0.1, (now - last) / 1000);
+        last = now;
+        offset += SPEED * dt;
+
+        // when we've moved past one full cell, recycle a strip
+        while (offset >= cellSize) {
+          offset -= cellSize;
+          strips.shift();
+          const crossCount = axis === 'y' ? cols : rows;
+          strips.push(makeRow(crossCount));
+        }
+
+        ctx.clearRect(0, 0, w, h);
+        if (axis === 'y') {
+          // strips go top->bottom in memory; draw with upward scroll
+          for (let r = 0; r < strips.length; r++) {
+            const y = r * cellSize - offset;
+            const row = strips[r];
+            for (let c = 0; c < row.length; c++) {
+              drawCell(ctx, row[c], c * cellSize, y, cellSize);
+            }
+          }
+        } else {
+          // strips are columns; draw with leftward scroll
+          for (let c = 0; c < strips.length; c++) {
+            const x = c * cellSize - offset;
+            const col = strips[c];
+            for (let r = 0; r < col.length; r++) {
+              drawCell(ctx, col[r], x, r * cellSize, cellSize);
+            }
+          }
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+
+      window.addEventListener('resize', () => {
+        clearTimeout(canvas.__pmT);
+        canvas.__pmT = setTimeout(() => {
+          const r = setupCanvas(canvas);
+          ctx = r.ctx; w = r.w; h = r.h;
+          rebuild();
+        }, 120);
+      });
+    }
+
+    // Desktop: vertical marquee on the right. Mobile: horizontal marquee at bottom only.
+    function mount() {
+      const right  = document.getElementById('pat-right');
+      const bottom = document.getElementById('pat-bottom');
+      const isMobile = window.matchMedia('(max-width: 700px)').matches;
+      if (isMobile) {
+        if (right)  right.style.display  = 'none';
+        if (bottom) { bottom.style.display = 'block'; initLane(bottom, 'x'); }
+      } else {
+        if (bottom) bottom.style.display = 'none';
+        if (right)  initLane(right,  'y');
+      }
+    }
+    mount();
+  })();
+</script>
+
+</body>
+</html>

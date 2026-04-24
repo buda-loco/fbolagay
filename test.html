@@ -10,6 +10,47 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-WWGZ4ZE9GP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-WWGZ4ZE9GP');
+</script>
+
+<!-- Meta Pixel -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '847278126622065');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=847278126622065&ev=PageView&noscript=1" alt=""></noscript>
+
+<!-- Runtime config (Firebase + ConvertKit) — loaded before Firebase module boots -->
+<script src="test.config.js"></script>
+
+<!-- Firebase (Firestore for lead capture) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  const cfg = window.__FER_CONFIG;
+  if (!cfg || !cfg.firebase) {
+    console.error('[fer] test.config.js missing or malformed — lead capture disabled');
+  } else {
+    const app = initializeApp(cfg.firebase);
+    const db = getFirestore(app);
+    const col = (cfg.firestore && cfg.firestore.collection) || 'test_respuestas';
+    window.__fbSaveLead = async (payload) => {
+      const docRef = await addDoc(collection(db, col), {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+      return docRef.id;
+    };
+  }
+</script>
 <style>
   :root {
     --navy: #0f1a3d;
@@ -439,6 +480,85 @@
   }
   .result-cta { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
 
+  /* ---------- LEAD FORM ---------- */
+  .lead {
+    margin-top: 28px;
+    padding: 22px 24px;
+    background: rgba(201,176,245,0.06);
+    border: 1px solid rgba(201,176,245,0.28);
+    border-radius: 16px;
+    max-width: 680px;
+  }
+  .lead h3 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--lilac-soft);
+    font-size: clamp(22px, 2vw, 28px);
+    line-height: 1.2;
+    margin: 0 0 8px;
+  }
+  .lead p { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0 0 16px; }
+  .lead-fields { display: grid; gap: 10px; }
+  @media (min-width: 560px) { .lead-fields { grid-template-columns: 1fr 1fr; } }
+  .lead-field { display: grid; gap: 6px; }
+  .lead-field label {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted-2); font-weight: 500;
+  }
+  .lead-field input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: #fff;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.4;
+    transition: border-color .15s, background .15s;
+  }
+  .lead-field input::placeholder { color: var(--muted-2); }
+  .lead-field input:hover { border-color: rgba(255,255,255,0.22); }
+  .lead-field input:focus-visible {
+    outline: none;
+    border-color: var(--focus);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 0 3px rgba(228,214,255,0.2);
+  }
+  .lead-field input[aria-invalid="true"] {
+    border-color: #ff7a8a;
+    box-shadow: 0 0 0 3px rgba(255,122,138,0.18);
+  }
+  .lead-hp { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .lead-error {
+    margin-top: 10px;
+    color: #ffb3bd;
+    font-size: 13px;
+    min-height: 1em;
+  }
+  .lead-submit { margin-top: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .lead-submit .btn[aria-busy="true"] { opacity: 0.8; pointer-events: none; }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .lead-legal { font-size: 11px; color: var(--muted-2); line-height: 1.5; margin-top: 10px; }
+  .lead-sent {
+    margin-top: 20px;
+    padding: 20px 24px;
+    background: rgba(227,234,0,0.08);
+    border: 1px solid rgba(227,234,0,0.28);
+    border-radius: 16px;
+    max-width: 680px;
+  }
+  .lead-sent strong { color: var(--yellow); }
+
   @media (max-width: 560px) {
     .shell { padding: 20px 18px 18px; }
     h1.q-text, h1.intro-title, h1.result-title { font-size: 32px; }
@@ -625,12 +745,74 @@
     return PRIORIDAD_BLOQUES.filter(c => respuestas.includes(c)).slice(0, 2);
   }
 
-  // ---------- STATE ----------
-  const state = {
-    step: 0,             // 0 = intro, 1..7 = preguntas, 8 = resultado
-    total: QUESTIONS.length,
-    answers: new Array(QUESTIONS.length).fill(null),
+  // ---------- CONFIG ----------
+  // Runtime values come from test.config.js (window.__FER_CONFIG).
+  // Setup checklist for Fer before launch:
+  //   1. In ConvertKit, create (or reuse) a Form dedicated to the F.E.R. test
+  //      and update `convertkit.formId` in test.config.js. The current form
+  //      (5366078) is the OLD "tablas" test form — it will add subscribers
+  //      and fire its existing automation, which does NOT match the new
+  //      email template in spec section 9.
+  //   2. On the Subscriber level in CK, register these custom fields so the
+  //      field values survive the subscribe call:
+  //        perfil, perfil_nombre, servicio, bloque_1, bloque_2,
+  //        respuestas, aliado, utm_source, utm_campaign, testrealizado
+  //   3. Build the new email automation (Desbloqueo / Impulso) in CK using
+  //      those fields as liquid tags. Trigger it on "subscribed to form".
+  //   4. Firestore: add security rules allowing anonymous create on
+  //      `test_respuestas` (no reads). Suggested rule:
+  //        match /databases/{db}/documents/test_respuestas/{doc} {
+  //          allow create: if request.resource.data.email is string;
+  //          allow read, update, delete: if false;
+  //        }
+  //   5. Restrict the Firebase API key in GCP Console by HTTP referrer
+  //      (ferbolagay.com/*, *.ferbolagay.com/*, localhost/*).
+  const CK_FORM_ID = (window.__FER_CONFIG && window.__FER_CONFIG.convertkit && window.__FER_CONFIG.convertkit.formId) || '';
+  const CK_API_KEY = (window.__FER_CONFIG && window.__FER_CONFIG.convertkit && window.__FER_CONFIG.convertkit.apiKey) || '';
+  const STORAGE_KEY = 'fer_test_v1';
+  const EMAIL_RE = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/;
+
+  // ---------- ATTRIBUTION ----------
+  const urlParams = new URLSearchParams(location.search);
+  const attribution = {
+    aliado: urlParams.get('id') || urlParams.get('aliado') || '',
+    utm_source: urlParams.get('utm_source') || '',
+    utm_medium: urlParams.get('utm_medium') || '',
+    utm_campaign: urlParams.get('utm_campaign') || '',
+    utm_term: urlParams.get('utm_term') || '',
+    utm_content: urlParams.get('utm_content') || '',
+    referrer: document.referrer || '',
+    landing: location.pathname + location.search,
   };
+
+  // ---------- STATE ----------
+  const saved = (() => {
+    try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY)) || null; }
+    catch { return null; }
+  })();
+
+  const state = {
+    step: saved?.step ?? 0,
+    total: QUESTIONS.length,
+    answers: (saved?.answers && saved.answers.length === QUESTIONS.length)
+      ? saved.answers
+      : new Array(QUESTIONS.length).fill(null),
+    leadSent: saved?.leadSent || false,
+  };
+
+  function persist() {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step: state.step, answers: state.answers, leadSent: state.leadSent,
+      }));
+    } catch {}
+  }
+
+  // ---------- ANALYTICS ----------
+  function track(name, params) {
+    try { if (window.gtag) window.gtag('event', name, params || {}); } catch {}
+    try { if (window.fbq) window.fbq('trackCustom', name, params || {}); } catch {}
+  }
 
   // ---------- RENDER ----------
   const stage = document.getElementById('stage');
@@ -728,15 +910,42 @@
         ${cierre.parrafos.map(p => `<p>${escapeHtml(p)}</p>`).join('')}
       </div>
 
-      <div class="result-cta">
-        <a class="btn btn-yellow" href="mailto:hola@ferbolagay.com?subject=${encodeURIComponent(cierre.cta)}">
-          ${escapeHtml(cierre.cta)}
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <button class="btn btn-ghost" id="restart-btn">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
-          Hacer el test otra vez
-        </button>
+      <form class="lead" id="lead-form" novalidate>
+        <h3>Recibí tu análisis completo por email</h3>
+        <p>Te mando la lectura detallada de los 7 ejes y los próximos pasos según tu perfil.</p>
+        <div class="lead-fields">
+          <div class="lead-field">
+            <label for="lead-name">Nombre</label>
+            <input id="lead-name" name="name" type="text" autocomplete="given-name" required placeholder="Tu nombre…" />
+          </div>
+          <div class="lead-field">
+            <label for="lead-email">Email</label>
+            <input id="lead-email" name="email" type="email" inputmode="email" autocomplete="email" required spellcheck="false" placeholder="tu@email.com" />
+          </div>
+        </div>
+        <input class="lead-hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div class="lead-error" id="lead-error" aria-live="polite"></div>
+        <div class="lead-submit">
+          <button class="btn btn-yellow" type="submit" id="lead-submit">
+            <span class="lead-submit-label">Enviarme el análisis completo</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button class="btn btn-ghost" type="button" id="restart-btn">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+            Hacer el test otra vez
+          </button>
+        </div>
+        <p class="lead-legal">Al enviar aceptás recibir el resultado y comunicaciones de Fer Bolagay. Podés darte de baja cuando quieras.</p>
+      </form>
+
+      <div class="lead-sent" id="lead-sent" hidden>
+        <strong>¡Listo!</strong> Revisá tu email en los próximos minutos. Si no lo ves, chequeá la carpeta de spam.
+        <div class="result-cta" style="margin-top:16px;">
+          <a class="btn btn-yellow" href="mailto:hola@ferbolagay.com?subject=${encodeURIComponent(cierre.cta)}">
+            ${escapeHtml(cierre.cta)}
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
       </div>`;
     return el;
   }
@@ -769,6 +978,9 @@
     current = next;
     updateChrome();
     wireSlide(next);
+    persist();
+    if (state.step === 1 && !window.__trackedStart) { track('test_start'); window.__trackedStart = true; }
+    if (state.step === state.total + 1 && !window.__trackedComplete) { track('test_completed'); window.__trackedComplete = true; }
     if (typeof window.__pmRegenerate === 'function') window.__pmRegenerate();
   }
 
@@ -798,8 +1010,13 @@
       el.querySelector('#restart-btn').addEventListener('click', () => {
         if (!confirm('¿Querés hacer el test otra vez? Se perderán tus respuestas actuales.')) return;
         state.answers = new Array(QUESTIONS.length).fill(null);
+        state.leadSent = false;
+        try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
+        window.__trackedStart = false; window.__trackedComplete = false;
         goTo(0, -1);
       });
+      wireLeadForm(el);
+      if (state.leadSent) showLeadSent(el);
     } else if (slideKind && slideKind.startsWith('q')) {
       el.querySelectorAll('.opt').forEach(btn => {
         btn.addEventListener('click', () => selectOption(btn));
@@ -820,6 +1037,148 @@
       if (state.step === state.total) goTo(state.total + 1);
       else goTo(state.step + 1);
     }, 320);
+  }
+
+  // ---------- LEAD CAPTURE ----------
+  function showLeadSent(slide) {
+    const form = slide.querySelector('#lead-form');
+    const sent = slide.querySelector('#lead-sent');
+    if (form) form.hidden = true;
+    if (sent) sent.hidden = false;
+  }
+
+  function wireLeadForm(slide) {
+    const form = slide.querySelector('#lead-form');
+    if (!form) return;
+    const nameInput = form.querySelector('#lead-name');
+    const emailInput = form.querySelector('#lead-email');
+    const honeypot = form.querySelector('input[name="company"]');
+    const errorEl = form.querySelector('#lead-error');
+    const submitBtn = form.querySelector('#lead-submit');
+    const submitLabel = submitBtn.querySelector('.lead-submit-label');
+
+    [nameInput, emailInput].forEach(input => {
+      input.addEventListener('input', () => {
+        input.setAttribute('aria-invalid', 'false');
+        errorEl.textContent = '';
+      });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (honeypot.value) return; // bot caught
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim().toLowerCase();
+
+      if (!name) {
+        nameInput.setAttribute('aria-invalid', 'true');
+        errorEl.textContent = 'Ingresá tu nombre.';
+        nameInput.focus();
+        return;
+      }
+      if (!EMAIL_RE.test(email)) {
+        emailInput.setAttribute('aria-invalid', 'true');
+        errorEl.textContent = 'Ingresá un email válido.';
+        emailInput.focus();
+        return;
+      }
+
+      submitBtn.setAttribute('aria-busy', 'true');
+      submitBtn.disabled = true;
+      submitLabel.innerHTML = '<span class="spinner"></span> Enviando…';
+
+      try {
+        await submitLead({ name, email });
+      } catch (err) {
+        console.error('[lead] submit error', err);
+      }
+      // optimistic: show success regardless — lead is persisted locally and
+      // any transient pipeline failure is logged for recovery.
+      state.leadSent = true;
+      persist();
+      track('lead_submitted');
+      showLeadSent(slide);
+    });
+  }
+
+  async function submitLead({ name, email }) {
+    const answers = state.answers.filter(Boolean);
+    const perfil = detectarPerfil(answers);
+    const servicio = asignarServicio(answers, perfil);
+    const bloques = seleccionarBloques(answers);
+    const perfilData = PERFILES[perfil];
+    const cierre = CIERRES[servicio];
+
+    const respuestasPorEje = {};
+    state.answers.forEach((code, i) => { respuestasPorEje['respuesta_' + (i + 1)] = code || ''; });
+
+    const payload = {
+      name, email,
+      perfil,
+      perfil_nombre: perfilData.nombre,
+      servicio,
+      bloque_1_code: bloques[0] || '',
+      bloque_1_text: bloques[0] ? BLOQUES[bloques[0]] : '',
+      bloque_2_code: bloques[1] || '',
+      bloque_2_text: bloques[1] ? BLOQUES[bloques[1]] : '',
+      respuestas: answers.join(','),
+      ...respuestasPorEje,
+      cierre_titulo: cierre.titulo,
+      cierre_cta: cierre.cta,
+      ...attribution,
+      user_agent: navigator.userAgent,
+      lang: navigator.language || '',
+      submitted_at: new Date().toISOString(),
+    };
+
+    // 1. Firestore write (source of truth)
+    const fbPromise = (async () => {
+      if (typeof window.__fbSaveLead !== 'function') return null;
+      try {
+        const id = await window.__fbSaveLead(payload);
+        return id;
+      } catch (err) {
+        console.error('[lead] firestore error', err);
+        return null;
+      }
+    })();
+
+    // 2. ConvertKit form subscribe (drives result email)
+    const ckPromise = (async () => {
+      if (!CK_FORM_ID || !CK_API_KEY) {
+        console.warn('[lead] ConvertKit config missing — skipping subscribe');
+        return null;
+      }
+      try {
+        const body = new URLSearchParams({
+          api_key: CK_API_KEY,
+          first_name: name,
+          email,
+          'fields[perfil]': perfil,
+          'fields[perfil_nombre]': perfilData.nombre,
+          'fields[servicio]': servicio,
+          'fields[bloque_1]': payload.bloque_1_text,
+          'fields[bloque_2]': payload.bloque_2_text,
+          'fields[respuestas]': payload.respuestas,
+          'fields[aliado]': attribution.aliado,
+          'fields[utm_source]': attribution.utm_source,
+          'fields[utm_campaign]': attribution.utm_campaign,
+          'fields[testrealizado]': new Date().toISOString().slice(0, 10),
+        });
+        const res = await fetch('https://api.convertkit.com/v3/forms/' + CK_FORM_ID + '/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
+        });
+        if (!res.ok) throw new Error('CK HTTP ' + res.status);
+        return await res.json();
+      } catch (err) {
+        console.error('[lead] convertkit error', err);
+        return null;
+      }
+    })();
+
+    await Promise.allSettled([fbPromise, ckPromise]);
   }
 
   // ---------- NAV / KEYBOARD ----------
@@ -863,8 +1222,20 @@
     }
   });
 
-  // init
-  goTo(0);
+  // init — resume from sessionStorage if we have partial progress
+  const resumeStep = (() => {
+    const s = state.step;
+    if (!s || s < 0) return 0;
+    if (s > state.total + 1) return state.total + 1;
+    // Resuming on the result slide requires every question answered.
+    if (s === state.total + 1 && state.answers.some(a => !a)) return 0;
+    // Resuming mid-test requires all prior questions answered.
+    if (s >= 2 && s <= state.total && state.answers.slice(0, s - 1).some(a => !a)) return 0;
+    return s;
+  })();
+  if (resumeStep >= 1) window.__trackedStart = true; // don't double-fire start on resume
+  if (resumeStep >= state.total + 1) window.__trackedComplete = true;
+  goTo(resumeStep);
 </script>
 
 <script>

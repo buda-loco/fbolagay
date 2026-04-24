@@ -77,7 +77,7 @@ fbq('track', 'PageView');
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
   body {
     background: var(--navy);
     color: #fff;
@@ -85,7 +85,7 @@ fbq('track', 'PageView');
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    overflow: hidden;
+    overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
   }
   button, a { touch-action: manipulation; }
@@ -109,7 +109,7 @@ fbq('track', 'PageView');
   .shell {
     position: relative;
     z-index: 1;
-    height: 100vh;
+    min-height: 100vh;
     display: grid;
     grid-template-rows: auto auto 1fr auto;
     padding: 24px clamp(20px, 5vw, 72px) 28px;
@@ -181,23 +181,22 @@ fbq('track', 'PageView');
   main.stage {
     position: relative;
     display: grid;
-    align-items: center;
+    grid-template-areas: "slides";
     padding: clamp(16px, 4vh, 48px) 0;
-    min-height: 0;
+    min-height: 50vh;
   }
   .slide {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    align-content: center;
-    gap: 14px;
+    grid-area: slides;
+    width: 100%;
     max-width: 760px;
+    display: grid;
+    align-content: safe center;
+    align-self: center;
+    gap: 14px;
     opacity: 0;
     transform: translateY(24px);
     pointer-events: none;
     transition: opacity 0.5s ease, transform 0.55s cubic-bezier(.3,.1,.2,1);
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
   .slide.active {
     opacity: 1;
@@ -418,32 +417,13 @@ fbq('track', 'PageView');
     font-weight: 500;
   }
   .result-eyebrow .dot { width:8px; height:8px; border-radius:50%; background: var(--yellow); box-shadow: 0 0 0 4px rgba(227,234,0,0.18); }
-  .profile-card {
-    margin-top: 22px;
-    padding: 22px 24px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    max-width: 720px;
-  }
-  .profile-card .label {
-    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-    color: var(--muted-2); margin-bottom: 6px;
-  }
-  .profile-card .name {
-    font-family: 'Instrument Serif', serif;
-    font-style: italic;
-    color: var(--lilac);
-    font-size: 28px;
-    line-height: 1.1;
-    margin-bottom: 14px;
-  }
-  .profile-card .desc {
-    color: var(--muted);
-    font-size: 15px;
+  .perfil-desc {
+    margin: 16px 0 0;
+    color: #fff;
+    font-size: clamp(16px, 1.2vw, 19px);
     line-height: 1.6;
+    max-width: 62ch;
   }
-  .profile-card .desc strong { color: #fff; font-weight: 500; }
 
   .patterns {
     margin-top: 20px;
@@ -565,10 +545,16 @@ fbq('track', 'PageView');
   .lead-sent strong { color: var(--yellow); }
 
   @media (max-width: 560px) {
-    .shell { padding: 20px 18px 18px; }
-    h1.q-text, h1.intro-title, h1.result-title { font-size: 32px; }
+    .shell { padding: 16px 16px 20px; }
+    main.stage { padding: 20px 0; min-height: 0; }
+    h1.q-text, h1.intro-title, h1.result-title { font-size: 30px; line-height: 1.08; }
+    .perfil-desc { font-size: 16px; }
     .opt { padding: 14px 16px; font-size: 15px; }
     .nav-hint { display: none; }
+    .lead { padding: 18px 18px; }
+    .lead-field input { padding: 14px 14px; font-size: 16px; }  /* 16px prevents iOS zoom on focus */
+    .lead-submit .btn { width: 100%; justify-content: center; }
+    .intro-meta { gap: 14px 20px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -838,11 +824,7 @@ fbq('track', 'PageView');
       <span class="result-eyebrow"><span class="dot"></span>Tu resultado</span>
       <h1 class="result-title">${escapeHtml(cierre.titulo)}</h1>
 
-      <div class="profile-card">
-        <div class="label">Perfil dominante · ${escapeHtml(perfil)}</div>
-        <div class="name">${escapeHtml(perfilData.nombre)}</div>
-        <div class="desc">${escapeHtml(perfilData.texto)}</div>
-      </div>
+      <p class="perfil-desc">${escapeHtml(perfilData.texto)}</p>
 
       ${bloques.length ? `
       <div class="patterns">

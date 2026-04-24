@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0f1a3d" />
+<meta name="color-scheme" content="dark" />
+<title>Test F.E.R. — Fer Bolagay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f1a3d;
+    --navy-2: #162351;
+    --lilac: #c9b0f5;
+    --lilac-soft: #e4d6ff;
+    --yellow: #E3EA00;
+    --blue: #3a5bf0;
+    --ink: #0b1330;
+    --line: rgba(255,255,255,0.10);
+    --muted: rgba(255,255,255,0.62);
+    --muted-2: rgba(255,255,255,0.38);
+    --focus: #e4d6ff;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, a { touch-action: manipulation; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+
+  /* ---------- PATTERN MARQUEE (right, tiled) ---------- */
+  .pm-right {
+    position: fixed;
+    top: 0; right: 0;
+    width: 240px;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.55;
+  }
+  @media (max-width: 900px) { .pm-right { display: none; } }
+
+  /* ---------- SHELL ---------- */
+  .shell {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    padding: 24px clamp(20px, 5vw, 72px) 28px;
+    padding-right: clamp(20px, 5vw, 260px);
+  }
+  @media (max-width: 900px) {
+    .shell { padding-right: clamp(20px, 5vw, 72px); }
+  }
+
+  /* ---------- HEADER ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px;
+  }
+  .logo-mark { display: inline-flex; align-items: center; }
+  .logo-mark img { height: 40px; width: auto; display: block; filter: invert(1) brightness(1.1); }
+  .exit {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    transition: color .2s, border-color .2s;
+  }
+  .exit:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+  .exit:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; color: #fff; }
+
+  /* ---------- PROGRESS ---------- */
+  .progress-wrap {
+    position: relative;
+    margin-top: 18px;
+    min-height: 36px;
+  }
+  .progress-wrap.is-hidden { visibility: hidden; }
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .progress-meta .step-counter { display: inline-flex; align-items: baseline; gap: 6px; }
+  .progress-meta .step-num { color: var(--lilac-soft); font-weight: 500; }
+  .progress-meta .step-sep, .progress-meta .step-total { color: var(--muted-2); }
+  .progress-track {
+    position: relative;
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    position: absolute;
+    inset: 0;
+    transform: scaleX(0);
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--lilac) 0%, var(--yellow) 100%);
+    border-radius: 2px;
+    transition: transform 0.55s cubic-bezier(.4,.1,.2,1);
+  }
+
+  /* ---------- STAGE ---------- */
+  main.stage {
+    position: relative;
+    display: grid;
+    align-items: center;
+    padding: clamp(16px, 4vh, 48px) 0;
+    min-height: 0;
+  }
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    align-content: center;
+    gap: 14px;
+    max-width: 760px;
+    opacity: 0;
+    transform: translateY(24px);
+    pointer-events: none;
+    transition: opacity 0.5s ease, transform 0.55s cubic-bezier(.3,.1,.2,1);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .slide.leaving {
+    opacity: 0;
+    transform: translateY(-24px);
+    pointer-events: none;
+  }
+
+  /* Question label (e.g. "01 → ") */
+  .q-label {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--lilac);
+  }
+  .q-label .arrow {
+    display: inline-block;
+    width: 20px; height: 1px;
+    background: var(--lilac);
+    position: relative;
+    margin-left: 2px;
+  }
+  .q-label .arrow::after {
+    content: "";
+    position: absolute;
+    right: -1px; top: -3px;
+    width: 7px; height: 7px;
+    border-top: 1px solid var(--lilac);
+    border-right: 1px solid var(--lilac);
+    transform: rotate(45deg);
+  }
+
+  h1.q-text, h1.intro-title, h1.result-title {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(36px, 4.8vw, 64px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    margin: 8px 0 8px;
+    text-wrap: pretty;
+  }
+  h1.intro-title .ital,
+  h1.q-text .ital,
+  h1.result-title .ital { font-style: italic; color: var(--lilac); }
+
+  .lede {
+    color: var(--muted);
+    font-size: clamp(15px, 1.15vw, 18px);
+    line-height: 1.55;
+    margin: 0 0 12px;
+    max-width: 58ch;
+  }
+  .lede strong { color: #fff; font-weight: 500; }
+
+  /* ---------- OPTIONS ---------- */
+  .options {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+    max-width: 640px;
+  }
+  .opt {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%;
+    padding: 18px 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    color: #fff;
+    text-align: left;
+    font: inherit;
+    font-size: 16px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .opt:hover {
+    border-color: rgba(201,176,245,0.55);
+    background: rgba(201,176,245,0.06);
+  }
+  .opt:hover .opt-key { background: var(--lilac); color: var(--ink); border-color: var(--lilac); }
+  .opt:focus-visible {
+    outline: none;
+    border-color: var(--focus);
+    box-shadow: 0 0 0 3px rgba(228,214,255,0.35);
+  }
+  .opt:active { transform: scale(0.995); }
+  .opt.selected {
+    border-color: var(--lilac);
+    background: rgba(201,176,245,0.12);
+  }
+  .opt.selected .opt-key { background: var(--lilac); color: var(--ink); border-color: var(--lilac); }
+  .opt-key {
+    flex: 0 0 32px;
+    height: 32px;
+    display: grid; place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .opt-text { flex: 1; }
+  .opt .check {
+    flex: 0 0 auto;
+    width: 20px; height: 20px;
+    opacity: 0;
+    transition: opacity .2s;
+    color: var(--lilac);
+  }
+  .opt.selected .check { opacity: 1; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted-2);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .kbd {
+    display: inline-grid; place-items: center;
+    min-width: 22px; height: 22px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.04);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- BUTTONS ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 24px;
+    border-radius: 999px;
+    font-size: 15px; font-weight: 500;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform .18s, background .18s, border-color .18s, box-shadow .18s;
+  }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover { transform: translateY(-1px); background: #4a6bff; box-shadow: 0 6px 22px rgba(58,91,240,0.35); }
+  .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.22); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.04); }
+  .btn-yellow { background: var(--yellow); color: var(--ink); }
+  .btn-yellow:hover { transform: translateY(-1px); background: #eff600; }
+  .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ---------- FOOTER NAV ---------- */
+  footer.nav {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .nav-left, .nav-right { display: inline-flex; align-items: center; gap: 10px; }
+  .icon-btn {
+    display: inline-grid; place-items: center;
+    width: 38px; height: 38px;
+    border: 1px solid var(--line);
+    background: transparent;
+    border-radius: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .icon-btn:hover:not(:disabled) { color: #fff; border-color: rgba(255,255,255,0.3); }
+  .icon-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; color: #fff; }
+  .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .nav-hint { font-size: 12px; color: var(--muted-2); letter-spacing: 0.02em; }
+  .nav-hint strong { color: var(--muted); font-weight: 500; }
+
+  /* ---------- INTRO ---------- */
+  .intro-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    background: rgba(201,176,245,0.12);
+    border: 1px solid rgba(201,176,245,0.28);
+    border-radius: 999px;
+    color: var(--lilac-soft);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+    width: fit-content;
+  }
+  .intro-eyebrow::before { content:""; width:6px; height:6px; border-radius:50%; background: var(--lilac); }
+  .intro-meta {
+    display: flex; gap: 28px; flex-wrap: wrap;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .intro-meta .m { display: inline-flex; align-items: center; gap: 8px; }
+  .intro-meta .m svg { width: 15px; height: 15px; color: var(--lilac); }
+  .intro-cta { margin-top: 28px; display: inline-flex; gap: 12px; align-items: center; }
+
+  /* ---------- RESULT ---------- */
+  .result-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--yellow);
+    font-weight: 500;
+  }
+  .result-eyebrow .dot { width:8px; height:8px; border-radius:50%; background: var(--yellow); box-shadow: 0 0 0 4px rgba(227,234,0,0.18); }
+  .profile-card {
+    margin-top: 22px;
+    padding: 22px 24px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    max-width: 720px;
+  }
+  .profile-card .label {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--muted-2); margin-bottom: 6px;
+  }
+  .profile-card .name {
+    font-family: 'Instrument Serif', serif;
+    font-style: italic;
+    color: var(--lilac);
+    font-size: 28px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .profile-card .desc {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .profile-card .desc strong { color: #fff; font-weight: 500; }
+
+  .patterns {
+    margin-top: 20px;
+    max-width: 720px;
+  }
+  .patterns h3 {
+    font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--muted-2);
+    margin: 0 0 12px;
+    font-weight: 500;
+  }
+  .pattern {
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+  }
+  .pattern:last-child { border-bottom: 1px solid var(--line); }
+  .pattern .num {
+    flex: 0 0 32px;
+    height: 32px;
+    display: grid; place-items: center;
+    background: var(--yellow);
+    color: var(--ink);
+    font-weight: 600;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .pattern .text { color: #fff; font-size: 15px; line-height: 1.55; }
+
+  .result-closing {
+    margin-top: 28px;
+    max-width: 680px;
+  }
+  .result-closing h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    font-size: clamp(24px, 2.2vw, 32px);
+    line-height: 1.2;
+    margin: 0 0 12px;
+  }
+  .result-closing p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 0 0 10px;
+  }
+  .result-cta { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  @media (max-width: 560px) {
+    .shell { padding: 20px 18px 18px; }
+    .logo-mark img { height: 32px; }
+    h1.q-text, h1.intro-title, h1.result-title { font-size: 32px; }
+    .opt { padding: 14px 16px; font-size: 15px; }
+    .nav-hint { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .pm-right { display: none; }
+    .btn-blue:hover, .btn-yellow:hover { transform: none; }
+  }
+
+  /* hide scrollbars within slides but keep scrolling */
+  .slide::-webkit-scrollbar { width: 4px; }
+  .slide::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<canvas class="pm-right" id="pat-right" aria-hidden="true"></canvas>
+
+<div class="shell">
+
+  <header>
+    <a href="index.html" class="logo-mark" aria-label="Fer Bolagay" translate="no">
+      <img src="assets/logo-horizontal.png" alt="Fer Bolagay" width="160" height="40" />
+    </a>
+    <a href="index.html" class="exit" title="Salir del test">
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Salir
+    </a>
+  </header>
+
+  <div class="progress-wrap is-hidden" id="progress-wrap">
+    <div class="progress-meta">
+      <span class="step-counter"><span class="step-num" id="step-num">01</span><span class="step-sep">/</span><span class="step-total">07</span></span>
+      <span id="step-pct">14%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <main class="stage" id="stage" aria-live="polite" aria-atomic="false">
+    <!-- Slides are injected by JS -->
+  </main>
+
+  <footer class="nav" id="nav">
+    <div class="nav-left">
+      <button class="icon-btn" id="prev" aria-label="Anterior" disabled>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="icon-btn" id="next" aria-label="Siguiente" disabled>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="nav-right nav-hint">
+      <span>Navegá con</span>
+      <span class="kbd">↑</span>
+      <span class="kbd">↓</span>
+      <span>o</span>
+      <span class="kbd">A</span>
+      <span class="kbd">B</span>
+      <span>para responder</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // ---------- DATA ----------
+  const QUESTIONS = [
+    { eje: 1, text: 'Cuando tengo un problema de dinero…', options: [
+      { code: 'A', text: 'Me cuesta resolverlo solo/a y termino dependiendo de otros.' },
+      { code: 'B', text: 'Lo resuelvo por mi cuenta, aunque eso implique cargarme de más.' },
+    ]},
+    { eje: 2, text: 'Cuando tengo que tomar decisiones pensando en el futuro…', options: [
+      { code: 'C', text: 'Me preocupa y eso influye en lo que hago.' },
+      { code: 'D', text: 'Confío en que se va a resolver, aunque no siempre tenga claro cuál es el siguiente paso.' },
+    ]},
+    { eje: 3, text: 'Con mi dinero y mis decisiones…', options: [
+      { code: 'E', text: 'Repito hábitos que sé que me perjudican.' },
+      { code: 'F', text: 'Sé lo que debería hacer, pero no termino de hacerlo.' },
+    ]},
+    { eje: 4, text: 'Cuando tomo decisiones económicas…', options: [
+      { code: 'G', text: 'Me cuesta sostenerlas y termino abandonándolas.' },
+      { code: 'H', text: 'Las sostengo incluso cuando ya no me están funcionando.' },
+    ]},
+    { eje: 5, text: 'Cuando el dinero involucra a otras personas…', options: [
+      { code: 'I', text: 'Priorizo mi beneficio, aunque eso a veces afecte el vínculo.' },
+      { code: 'J', text: 'Priorizo a otros y termino perjudicándome.' },
+    ]},
+    { eje: 6, text: 'Cuando tengo que tomar decisiones con dinero…', options: [
+      { code: 'K', text: 'No tengo claro qué quiero lograr y termino decidiendo sin dirección.' },
+      { code: 'L', text: 'Sé lo que quiero, pero igual cambio mis decisiones según el momento.' },
+    ]},
+    { eje: 7, text: 'Cuando tomo decisiones con dinero…', options: [
+      { code: 'M', text: 'Actúo por impulso y después lo reviso.' },
+      { code: 'N', text: 'Me controlo tanto que termino frenando decisiones que necesito tomar.' },
+    ]},
+  ];
+
+  const PERFILES = {
+    P1: {
+      nombre: 'Sin dirección — no concretás',
+      texto: 'Te estás haciendo cargo de tus decisiones, pero eso no está dando resultado. Estás pensando, intentando y decidiendo, pero no hay una dirección clara que ordene todo eso. Tu esfuerzo no se convierte en resultados.',
+    },
+    P2: {
+      nombre: 'Control excesivo',
+      texto: 'Estás intentando controlar tus decisiones para no equivocarte, pero ese control te está haciendo perder oportunidades. No es falta de criterio: es que estás usando el control para evitar errores, y eso también tiene costo.',
+    },
+    P3: {
+      nombre: 'Reactivo emocional',
+      texto: 'Hoy estás tomando decisiones influido por la emoción, y eso está generando resultados inconsistentes. Cambiás decisiones o no sostenés lo que empezás. El problema no es la emoción: es decidir sin un criterio que se mantenga.',
+    },
+    P0: {
+      nombre: 'Mixto — sin patrón dominante',
+      texto: 'Tu resultado no muestra un patrón dominante claro. Muestra algo igual de importante: varias decisiones están funcionando en contra de tus resultados al mismo tiempo. No es falta de capacidad, es falta de orden en cómo estás decidiendo.',
+    },
+  };
+
+  const BLOQUES = {
+    A: 'Estás esperando ayuda o validación antes de actuar, y eso hace que postergues decisiones que ya podrías estar tomando.',
+    B: 'Resolvés por tu cuenta, pero también te cargás con decisiones que no siempre deberías asumir solo/a.',
+    C: 'La preocupación está influyendo en lo que hacés: decidís más desde el miedo que desde un criterio claro.',
+    D: 'Confiar en que se va a resolver sin saber qué hacer está dejando decisiones importantes sin definir.',
+    E: 'Estás repitiendo hábitos que sabés que te perjudican, y eso impacta directo en tus resultados.',
+    F: 'Estás pensando más de lo que ejecutás, y eso está frenando tus resultados.',
+    G: 'Te cuesta sostener decisiones en el tiempo, y eso hace que lo que empezás no termine generando resultado.',
+    H: 'Estás sosteniendo decisiones incluso cuando ya no funcionan, y eso hace que pierdas tiempo y oportunidades.',
+    I: 'Estás priorizando tu beneficio, y eso puede afectar la calidad de tus vínculos y oportunidades.',
+    J: 'Estás dando más de lo que recibís, y eso te está costando dinero.',
+    K: 'No tener claro qué querés está haciendo que tomes decisiones sin dirección, y eso te aleja de resultados.',
+    L: 'Sabés lo que querés, pero estás cambiando decisiones, y eso te hace perder coherencia.',
+    M: 'Estás decidiendo por impulso, y eso hace que después tengas que corregir decisiones.',
+    N: 'Estás controlando de más, y eso te está frenando decisiones que necesitás tomar.',
+  };
+
+  const PRIORIDAD_BLOQUES = ['J','K','F','N','H','C','G','M','E','B','D','L','A','I'];
+
+  const CIERRES = {
+    desbloqueo: {
+      titulo: 'Este es el patrón que está frenando tus resultados con el dinero',
+      parrafos: [
+        'No es un problema de dinero. Es un problema de cómo estás decidiendo.',
+        'Hoy lo que pensás, lo que sentís y lo que hacés no están alineados. Y eso está haciendo que tus resultados no cambien.',
+        'Hay una forma de ordenar esto y empezar a decidir con más claridad.',
+      ],
+      cta: 'Dejar de decidir mal con mi dinero',
+    },
+    impulso: {
+      titulo: 'Este es el patrón que está frenando tus resultados con el dinero',
+      parrafos: [
+        'No necesitás hacer más. Necesitás decidir mejor.',
+        'Hoy ya estás en movimiento, pero algunas decisiones te están costando resultados.',
+        'Hay una forma de ajustar eso para que lo que hacés empiece a rendir mejor.',
+      ],
+      cta: 'Tomar mejores decisiones con mi dinero',
+    },
+  };
+
+  function detectarPerfil(respuestas) {
+    const count = (codes) => codes.filter(c => respuestas.includes(c)).length;
+    if (count(['F','K','N']) >= 2) return 'P1';
+    if (count(['B','H','N']) >= 2) return 'P2';
+    if (count(['C','G','M']) >= 2) return 'P3';
+    return 'P0';
+  }
+  function asignarServicio(respuestas, perfil) {
+    if (perfil === 'P2' && !respuestas.includes('F') && !respuestas.includes('K')) return 'impulso';
+    return 'desbloqueo';
+  }
+  function seleccionarBloques(respuestas) {
+    return PRIORIDAD_BLOQUES.filter(c => respuestas.includes(c)).slice(0, 2);
+  }
+
+  // ---------- STATE ----------
+  const state = {
+    step: 0,             // 0 = intro, 1..7 = preguntas, 8 = resultado
+    total: QUESTIONS.length,
+    answers: new Array(QUESTIONS.length).fill(null),
+  };
+
+  // ---------- RENDER ----------
+  const stage = document.getElementById('stage');
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressFill = document.getElementById('progress-fill');
+  const stepNum = document.getElementById('step-num');
+  const stepPct = document.getElementById('step-pct');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderIntro() {
+    const el = document.createElement('section');
+    el.className = 'slide';
+    el.dataset.slide = 'intro';
+    el.innerHTML = `
+      <span class="intro-eyebrow"><span translate="no">Test F.E.R.</span> · 7&nbsp;preguntas</span>
+      <h1 class="intro-title">Descubrí qué <span class="ital">patrón</span> está influyendo hoy en tu relación con el dinero.</h1>
+      <p class="lede">Este test no mide cuánto <strong>sabés</strong> de finanzas. Mide cómo estás <strong>decidiendo</strong> con tu dinero: desde tus emociones, tus hábitos y tu forma de actuar.</p>
+      <div class="intro-meta">
+        <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>3&nbsp;minutos</span>
+        <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4"/><path d="M12 2v13"/><path d="m7 10 5 5 5-5"/></svg>7&nbsp;preguntas</span>
+        <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Resultado inmediato</span>
+      </div>
+      <div class="intro-cta">
+        <button class="btn btn-blue" id="start-btn">
+          Empezar test
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+        <span class="nav-hint"><span class="kbd">Enter</span></span>
+      </div>`;
+    return el;
+  }
+
+  function renderQuestion(qIndex) {
+    const q = QUESTIONS[qIndex];
+    const selected = state.answers[qIndex];
+    const el = document.createElement('section');
+    el.className = 'slide';
+    el.dataset.slide = 'q' + qIndex;
+    el.innerHTML = `
+      <span class="q-label">Pregunta ${String(qIndex + 1).padStart(2,'0')}<span class="arrow"></span></span>
+      <h1 class="q-text">${escapeHtml(q.text)}</h1>
+      <div class="options">
+        ${q.options.map((o, i) => `
+          <button class="opt ${selected === o.code ? 'selected' : ''}" data-code="${o.code}" data-qindex="${qIndex}" aria-pressed="${selected === o.code ? 'true' : 'false'}">
+            <span class="opt-key" aria-hidden="true">${String.fromCharCode(65 + i)}</span>
+            <span class="opt-text">${escapeHtml(o.text)}</span>
+            <svg aria-hidden="true" class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </button>
+        `).join('')}
+      </div>
+      <div class="hint">
+        <span class="kbd">A</span><span>o</span><span class="kbd">B</span><span>para elegir · </span><span class="kbd">Enter</span><span>para continuar</span>
+      </div>`;
+    return el;
+  }
+
+  function renderResult() {
+    const answers = state.answers.filter(Boolean);
+    const perfil = detectarPerfil(answers);
+    const servicio = asignarServicio(answers, perfil);
+    const bloques = seleccionarBloques(answers);
+    const cierre = CIERRES[servicio];
+    const perfilData = PERFILES[perfil];
+
+    const el = document.createElement('section');
+    el.className = 'slide';
+    el.dataset.slide = 'result';
+    el.innerHTML = `
+      <span class="result-eyebrow"><span class="dot"></span>Tu resultado</span>
+      <h1 class="result-title">${escapeHtml(cierre.titulo)}</h1>
+
+      <div class="profile-card">
+        <div class="label">Perfil dominante · ${perfil}</div>
+        <div class="name">${escapeHtml(perfilData.nombre)}</div>
+        <div class="desc">${escapeHtml(perfilData.texto)}</div>
+      </div>
+
+      ${bloques.length ? `
+      <div class="patterns">
+        <h3>Tus dos patrones más fuertes</h3>
+        ${bloques.map((code, i) => `
+          <div class="pattern">
+            <div class="num">${i + 1}</div>
+            <div class="text">${escapeHtml(BLOQUES[code])}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      <div class="result-closing">
+        ${cierre.parrafos.map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+      </div>
+
+      <div class="result-cta">
+        <a class="btn btn-yellow" href="mailto:hola@ferbolagay.com?subject=${encodeURIComponent(cierre.cta)}">
+          ${escapeHtml(cierre.cta)}
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <button class="btn btn-ghost" id="restart-btn">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Hacer el test otra vez
+        </button>
+      </div>`;
+    return el;
+  }
+
+  function buildSlide(step) {
+    if (step === 0) return renderIntro();
+    if (step >= 1 && step <= state.total) return renderQuestion(step - 1);
+    return renderResult();
+  }
+
+  // ---------- TRANSITIONS ----------
+  let current = null;
+  function goTo(step, dir = 1) {
+    if (step < 0 || step > state.total + 1) return;
+    const prev = current;
+    const next = buildSlide(step);
+    stage.appendChild(next);
+
+    // force layout then activate
+    requestAnimationFrame(() => {
+      if (prev) {
+        prev.classList.add('leaving');
+        prev.classList.remove('active');
+        setTimeout(() => prev.remove(), 550);
+      }
+      next.classList.add('active');
+    });
+
+    state.step = step;
+    current = next;
+    updateChrome();
+    wireSlide(next);
+  }
+
+  function updateChrome() {
+    const isQuestion = state.step >= 1 && state.step <= state.total;
+    progressWrap.classList.toggle('is-hidden', !isQuestion);
+    if (isQuestion) {
+      const pct = (state.step / state.total) * 100;
+      progressFill.style.transform = 'scaleX(' + (pct / 100) + ')';
+      stepNum.textContent = String(state.step).padStart(2, '0');
+      stepPct.textContent = Math.round(pct) + '%';
+    }
+    prevBtn.disabled = state.step <= 1;
+    const canGoNext = state.step === 0
+      ? true
+      : isQuestion
+        ? Boolean(state.answers[state.step - 1])
+        : false;
+    nextBtn.disabled = !canGoNext;
+  }
+
+  function wireSlide(el) {
+    const slideKind = el.dataset.slide;
+    if (slideKind === 'intro') {
+      el.querySelector('#start-btn').addEventListener('click', () => goTo(1));
+    } else if (slideKind === 'result') {
+      el.querySelector('#restart-btn').addEventListener('click', () => {
+        if (!confirm('¿Querés hacer el test otra vez? Se perderán tus respuestas actuales.')) return;
+        state.answers = new Array(QUESTIONS.length).fill(null);
+        goTo(0, -1);
+      });
+    } else if (slideKind && slideKind.startsWith('q')) {
+      el.querySelectorAll('.opt').forEach(btn => {
+        btn.addEventListener('click', () => selectOption(btn));
+      });
+    }
+  }
+
+  function selectOption(btn) {
+    const code = btn.dataset.code;
+    const qIndex = Number(btn.dataset.qindex);
+    state.answers[qIndex] = code;
+    // reflect selection
+    const slide = btn.closest('.slide');
+    slide.querySelectorAll('.opt').forEach(b => b.classList.toggle('selected', b === btn));
+    updateChrome();
+    // auto-advance with a short delay for feedback
+    setTimeout(() => {
+      if (state.step === state.total) goTo(state.total + 1);
+      else goTo(state.step + 1);
+    }, 320);
+  }
+
+  // ---------- NAV / KEYBOARD ----------
+  prevBtn.addEventListener('click', () => {
+    if (state.step > 0) goTo(state.step - 1, -1);
+  });
+  nextBtn.addEventListener('click', () => {
+    if (nextBtn.disabled) return;
+    if (state.step === 0) return goTo(1);
+    if (state.step >= 1 && state.step <= state.total) {
+      if (state.step === state.total) goTo(state.total + 1);
+      else goTo(state.step + 1);
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (state.step >= 1 && state.step <= state.total) {
+      const q = QUESTIONS[state.step - 1];
+      if (e.key === 'a' || e.key === 'A' || e.key === '1') {
+        const btn = current?.querySelector('.opt[data-code="'+q.options[0].code+'"]');
+        if (btn) selectOption(btn);
+        e.preventDefault(); return;
+      }
+      if (e.key === 'b' || e.key === 'B' || e.key === '2') {
+        const btn = current?.querySelector('.opt[data-code="'+q.options[1].code+'"]');
+        if (btn) selectOption(btn);
+        e.preventDefault(); return;
+      }
+    }
+    if (e.key === 'Enter') {
+      if (!nextBtn.disabled) nextBtn.click();
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') {
+      if (!nextBtn.disabled) nextBtn.click();
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      if (!prevBtn.disabled) prevBtn.click();
+      e.preventDefault();
+    } else if (e.key === 'Escape') {
+      // no-op
+    }
+  });
+
+  // init
+  goTo(0);
+</script>
+
+<script>
+  // --- Pattern marquee (right side, tiled grid, bottom -> top) ---
+  (function patternMarquee() {
+    const PALETTE = ['#E3EA00', '#D5B4FB', '#EFEEEA', '#283287', '#000000', '#ffffff'];
+    const KINDS = ['square','square','square','quarter','quarter','half','circle','empty'];
+    const QC_PATH = new Path2D('M0,0 L0,178.5 L178.5,178.5 C178.5,80 98.5,0 0,0 Z');
+    function rand(a,b){ return a + Math.random()*(b-a); }
+    function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    const canvas = document.getElementById('pat-right');
+    if (!canvas) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let ctx, w, h, cellSize, cols, rows, strips, offset = 0, rafId = null;
+
+    function setup() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = canvas.getBoundingClientRect();
+      canvas.width  = Math.max(1, Math.round(r.width  * dpr));
+      canvas.height = Math.max(1, Math.round(r.height * dpr));
+      ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      w = r.width; h = r.height;
+    }
+    function makeCell() {
+      return { kind: pick(KINDS), color: pick(PALETTE), rot: pick([0,90,180,270]) };
+    }
+    function makeRow(n) { const row = []; for(let i=0;i<n;i++) row.push(makeCell()); return row; }
+    function rebuild() {
+      cols = Math.max(1, Math.round(w / 70));
+      cellSize = w / cols;
+      rows = Math.ceil(h / cellSize) + 3;
+      strips = []; for (let i=0;i<rows;i++) strips.push(makeRow(cols));
+      offset = 0;
+    }
+    function drawCell(cell, x, y, size) {
+      if (cell.kind === 'empty') return;
+      ctx.save();
+      ctx.translate(x + size/2, y + size/2);
+      ctx.rotate((cell.rot * Math.PI)/180);
+      ctx.translate(-size/2, -size/2);
+      ctx.fillStyle = cell.color;
+      if (cell.kind === 'square') ctx.fillRect(0,0,size,size);
+      else if (cell.kind === 'quarter') { const k = size/178.5; ctx.scale(k,k); ctx.fill(QC_PATH); }
+      else if (cell.kind === 'circle') { ctx.beginPath(); ctx.arc(size/2, size/2, size/2, 0, Math.PI*2); ctx.fill(); }
+      else if (cell.kind === 'half') { ctx.beginPath(); ctx.arc(size/2, size, size/2, Math.PI, 0); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+
+    setup(); rebuild();
+    const SPEED = 26;
+    let last = performance.now();
+    function drawStatic() {
+      ctx.clearRect(0,0,w,h);
+      for (let r=0; r<strips.length; r++) {
+        const y = r * cellSize;
+        const row = strips[r];
+        for (let c=0; c<row.length; c++) drawCell(row[c], c*cellSize, y, cellSize);
+      }
+    }
+    function frame(now) {
+      const dt = Math.min(0.1, (now - last)/1000);
+      last = now;
+      offset += SPEED * dt;
+      while (offset >= cellSize) {
+        offset -= cellSize;
+        strips.shift(); strips.push(makeRow(cols));
+      }
+      ctx.clearRect(0,0,w,h);
+      for (let r=0; r<strips.length; r++) {
+        const y = r * cellSize - offset;
+        const row = strips[r];
+        for (let c=0; c<row.length; c++) drawCell(row[c], c*cellSize, y, cellSize);
+      }
+      rafId = requestAnimationFrame(frame);
+    }
+    function start() {
+      if (reduceMotion.matches) { drawStatic(); return; }
+      last = performance.now();
+      rafId = requestAnimationFrame(frame);
+    }
+    function stop() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    }
+    start();
+    reduceMotion.addEventListener('change', () => { stop(); start(); });
+
+    window.addEventListener('resize', () => {
+      clearTimeout(window.__pmT);
+      window.__pmT = setTimeout(() => { stop(); setup(); rebuild(); start(); }, 120);
+    });
+  })();
+</script>
+
+</body>
+</html>

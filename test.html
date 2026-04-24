@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#0f1a3d" />
 <meta name="color-scheme" content="dark" />
+<meta name="referrer" content="strict-origin-when-cross-origin" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://www.gstatic.com; connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.analytics.google.com https://www.googletagmanager.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com https://api.convertkit.com https://connect.facebook.net; img-src 'self' data: https://www.facebook.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
 <title>Test F.E.R. — Fer Bolagay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,28 +30,36 @@ fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=847278126622065&ev=PageView&noscript=1" alt=""></noscript>
 
-<!-- Runtime config (Firebase + ConvertKit) — loaded before Firebase module boots -->
+<!-- Runtime config (Firebase + ConvertKit) — loaded before any Fer module -->
 <script src="test.config.js"></script>
+<script src="test.data.js"></script>
+<script src="test.logic.js"></script>
 
 <!-- Firebase (Firestore for lead capture) -->
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-  import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-  const cfg = window.__FER_CONFIG;
-  if (!cfg || !cfg.firebase) {
-    console.error('[fer] test.config.js missing or malformed — lead capture disabled');
-  } else {
+  window.Fer = window.Fer || {};
+  Fer.fbReady = (async () => {
+    const cfg = window.__FER_CONFIG;
+    if (!cfg || !cfg.firebase) {
+      console.error('[fer] test.config.js missing or malformed — lead capture disabled');
+      return null;
+    }
+    const [{ initializeApp }, { getFirestore, collection, addDoc, serverTimestamp }] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'),
+    ]);
     const app = initializeApp(cfg.firebase);
     const db = getFirestore(app);
     const col = (cfg.firestore && cfg.firestore.collection) || 'test_respuestas';
-    window.__fbSaveLead = async (payload) => {
-      const docRef = await addDoc(collection(db, col), {
-        ...payload,
-        createdAt: serverTimestamp(),
-      });
-      return docRef.id;
+    Fer.fbSaveLead = async (payload) => {
+      const ref = await addDoc(collection(db, col), { ...payload, createdAt: serverTimestamp() });
+      return ref.id;
     };
-  }
+    return Fer.fbSaveLead;
+  })().catch((err) => {
+    console.error('[fer] firebase init failed', err);
+    return null;
+  });
 </script>
 <style>
   :root {
@@ -90,7 +100,9 @@ fbq('track', 'PageView');
     pointer-events: none;
     z-index: 0;
     opacity: 0.55;
+    transition: opacity 0.35s ease;
   }
+  .pm-right.is-swapping { opacity: 0; }
   @media (max-width: 900px) { .pm-right { display: none; } }
 
   /* ---------- SHELL ---------- */
@@ -465,13 +477,6 @@ fbq('track', 'PageView');
     margin-top: 28px;
     max-width: 680px;
   }
-  .result-closing h2 {
-    font-family: 'Instrument Serif', serif;
-    font-weight: 400;
-    font-size: clamp(24px, 2.2vw, 32px);
-    line-height: 1.2;
-    margin: 0 0 12px;
-  }
   .result-closing p {
     color: var(--muted);
     font-size: 15px;
@@ -576,10 +581,17 @@ fbq('track', 'PageView');
     .btn-blue:hover, .btn-yellow:hover { transform: none; }
   }
 
-  .pm-right {
-    transition: opacity 0.35s ease;
+  /* ---------- LEAD ERROR STATE ---------- */
+  .lead-retry {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(255,122,138,0.08);
+    border: 1px solid rgba(255,122,138,0.35);
+    border-radius: 10px;
+    color: #ffb3bd;
+    font-size: 13px;
+    line-height: 1.5;
   }
-  .pm-right.is-swapping { opacity: 0; }
 
   /* hide scrollbars within slides but keep scrolling */
   .slide::-webkit-scrollbar { width: 4px; }
@@ -604,8 +616,8 @@ fbq('track', 'PageView');
 
   <div class="progress-wrap is-hidden" id="progress-wrap">
     <div class="progress-meta">
-      <span class="step-counter"><span class="step-num" id="step-num">01</span><span class="step-sep">/</span><span class="step-total">07</span></span>
-      <span id="step-pct">14%</span>
+      <span class="step-counter"><span class="step-num" id="step-num">01</span><span class="step-sep">/</span><span class="step-total" id="step-total">07</span></span>
+      <span id="step-pct">0%</span>
     </div>
     <div class="progress-track">
       <div class="progress-fill" id="progress-fill"></div>
@@ -639,111 +651,10 @@ fbq('track', 'PageView');
 </div>
 
 <script>
-  // ---------- DATA ----------
-  const QUESTIONS = [
-    { eje: 1, text: 'Cuando tengo un problema de dinero…', options: [
-      { code: 'A', text: 'Me cuesta resolverlo solo/a y termino dependiendo de otros.' },
-      { code: 'B', text: 'Lo resuelvo por mi cuenta, aunque eso implique cargarme de más.' },
-    ]},
-    { eje: 2, text: 'Cuando tengo que tomar decisiones pensando en el futuro…', options: [
-      { code: 'C', text: 'Me preocupa y eso influye en lo que hago.' },
-      { code: 'D', text: 'Confío en que se va a resolver, aunque no siempre tenga claro cuál es el siguiente paso.' },
-    ]},
-    { eje: 3, text: 'Con mi dinero y mis decisiones…', options: [
-      { code: 'E', text: 'Repito hábitos que sé que me perjudican.' },
-      { code: 'F', text: 'Sé lo que debería hacer, pero no termino de hacerlo.' },
-    ]},
-    { eje: 4, text: 'Cuando tomo decisiones económicas…', options: [
-      { code: 'G', text: 'Me cuesta sostenerlas y termino abandonándolas.' },
-      { code: 'H', text: 'Las sostengo incluso cuando ya no me están funcionando.' },
-    ]},
-    { eje: 5, text: 'Cuando el dinero involucra a otras personas…', options: [
-      { code: 'I', text: 'Priorizo mi beneficio, aunque eso a veces afecte el vínculo.' },
-      { code: 'J', text: 'Priorizo a otros y termino perjudicándome.' },
-    ]},
-    { eje: 6, text: 'Cuando tengo que tomar decisiones con dinero…', options: [
-      { code: 'K', text: 'No tengo claro qué quiero lograr y termino decidiendo sin dirección.' },
-      { code: 'L', text: 'Sé lo que quiero, pero igual cambio mis decisiones según el momento.' },
-    ]},
-    { eje: 7, text: 'Cuando tomo decisiones con dinero…', options: [
-      { code: 'M', text: 'Actúo por impulso y después lo reviso.' },
-      { code: 'N', text: 'Me controlo tanto que termino frenando decisiones que necesito tomar.' },
-    ]},
-  ];
-
-  const PERFILES = {
-    P1: {
-      nombre: 'Sin dirección — no concretás',
-      texto: 'Te estás haciendo cargo de tus decisiones, pero eso no está dando resultado. Estás pensando, intentando y decidiendo, pero no hay una dirección clara que ordene todo eso. Tu esfuerzo no se convierte en resultados.',
-    },
-    P2: {
-      nombre: 'Control excesivo',
-      texto: 'Estás intentando controlar tus decisiones para no equivocarte, pero ese control te está haciendo perder oportunidades. No es falta de criterio: es que estás usando el control para evitar errores, y eso también tiene costo.',
-    },
-    P3: {
-      nombre: 'Reactivo emocional',
-      texto: 'Hoy estás tomando decisiones influido por la emoción, y eso está generando resultados inconsistentes. Cambiás decisiones o no sostenés lo que empezás. El problema no es la emoción: es decidir sin un criterio que se mantenga.',
-    },
-    P0: {
-      nombre: 'Mixto — sin patrón dominante',
-      texto: 'Tu resultado no muestra un patrón dominante claro. Muestra algo igual de importante: varias decisiones están funcionando en contra de tus resultados al mismo tiempo. No es falta de capacidad, es falta de orden en cómo estás decidiendo.',
-    },
-  };
-
-  const BLOQUES = {
-    A: 'Estás esperando ayuda o validación antes de actuar, y eso hace que postergues decisiones que ya podrías estar tomando.',
-    B: 'Resolvés por tu cuenta, pero también te cargás con decisiones que no siempre deberías asumir solo/a.',
-    C: 'La preocupación está influyendo en lo que hacés: decidís más desde el miedo que desde un criterio claro.',
-    D: 'Confiar en que se va a resolver sin saber qué hacer está dejando decisiones importantes sin definir.',
-    E: 'Estás repitiendo hábitos que sabés que te perjudican, y eso impacta directo en tus resultados.',
-    F: 'Estás pensando más de lo que ejecutás, y eso está frenando tus resultados.',
-    G: 'Te cuesta sostener decisiones en el tiempo, y eso hace que lo que empezás no termine generando resultado.',
-    H: 'Estás sosteniendo decisiones incluso cuando ya no funcionan, y eso hace que pierdas tiempo y oportunidades.',
-    I: 'Estás priorizando tu beneficio, y eso puede afectar la calidad de tus vínculos y oportunidades.',
-    J: 'Estás dando más de lo que recibís, y eso te está costando dinero.',
-    K: 'No tener claro qué querés está haciendo que tomes decisiones sin dirección, y eso te aleja de resultados.',
-    L: 'Sabés lo que querés, pero estás cambiando decisiones, y eso te hace perder coherencia.',
-    M: 'Estás decidiendo por impulso, y eso hace que después tengas que corregir decisiones.',
-    N: 'Estás controlando de más, y eso te está frenando decisiones que necesitás tomar.',
-  };
-
-  const PRIORIDAD_BLOQUES = ['J','K','F','N','H','C','G','M','E','B','D','L','A','I'];
-
-  const CIERRES = {
-    desbloqueo: {
-      titulo: 'Este es el patrón que está frenando tus resultados con el dinero',
-      parrafos: [
-        'No es un problema de dinero. Es un problema de cómo estás decidiendo.',
-        'Hoy lo que pensás, lo que sentís y lo que hacés no están alineados. Y eso está haciendo que tus resultados no cambien.',
-        'Hay una forma de ordenar esto y empezar a decidir con más claridad.',
-      ],
-      cta: 'Dejar de decidir mal con mi dinero',
-    },
-    impulso: {
-      titulo: 'Este es el patrón que está frenando tus resultados con el dinero',
-      parrafos: [
-        'No necesitás hacer más. Necesitás decidir mejor.',
-        'Hoy ya estás en movimiento, pero algunas decisiones te están costando resultados.',
-        'Hay una forma de ajustar eso para que lo que hacés empiece a rendir mejor.',
-      ],
-      cta: 'Tomar mejores decisiones con mi dinero',
-    },
-  };
-
-  function detectarPerfil(respuestas) {
-    const count = (codes) => codes.filter(c => respuestas.includes(c)).length;
-    if (count(['F','K','N']) >= 2) return 'P1';
-    if (count(['B','H','N']) >= 2) return 'P2';
-    if (count(['C','G','M']) >= 2) return 'P3';
-    return 'P0';
-  }
-  function asignarServicio(respuestas, perfil) {
-    if (perfil === 'P2' && !respuestas.includes('F') && !respuestas.includes('K')) return 'impulso';
-    return 'desbloqueo';
-  }
-  function seleccionarBloques(respuestas) {
-    return PRIORIDAD_BLOQUES.filter(c => respuestas.includes(c)).slice(0, 2);
-  }
+(() => {
+  window.Fer = window.Fer || {};
+  const { QUESTIONS, PERFILES, BLOQUES, CIERRES, PRIORIDAD_BLOQUES } = Fer.data;
+  const { detectarPerfil, asignarServicio, seleccionarBloques } = Fer.logic;
 
   // ---------- CONFIG ----------
   // Runtime values come from test.config.js (window.__FER_CONFIG).
@@ -759,30 +670,49 @@ fbq('track', 'PageView');
   //        respuestas, aliado, utm_source, utm_campaign, testrealizado
   //   3. Build the new email automation (Desbloqueo / Impulso) in CK using
   //      those fields as liquid tags. Trigger it on "subscribed to form".
-  //   4. Firestore: add security rules allowing anonymous create on
-  //      `test_respuestas` (no reads). Suggested rule:
-  //        match /databases/{db}/documents/test_respuestas/{doc} {
-  //          allow create: if request.resource.data.email is string;
-  //          allow read, update, delete: if false;
-  //        }
+  //   4. Firestore: deploy the rules documented in test.config.js.
   //   5. Restrict the Firebase API key in GCP Console by HTTP referrer
   //      (ferbolagay.com/*, *.ferbolagay.com/*, localhost/*).
-  const CK_FORM_ID = (window.__FER_CONFIG && window.__FER_CONFIG.convertkit && window.__FER_CONFIG.convertkit.formId) || '';
-  const CK_API_KEY = (window.__FER_CONFIG && window.__FER_CONFIG.convertkit && window.__FER_CONFIG.convertkit.apiKey) || '';
+  const CFG = window.__FER_CONFIG || {};
+  const CK_FORM_ID = (CFG.convertkit && CFG.convertkit.formId) || '';
+  const CK_API_KEY = (CFG.convertkit && CFG.convertkit.apiKey) || '';
   const STORAGE_KEY = 'fer_test_v1';
-  const EMAIL_RE = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,10})+$/;
+  const PENDING_KEY = 'fer_pending_lead_v1';
+  // DNS label max is 63 chars — accepts modern TLDs like .photography, .consulting.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,63}$/;
+  // Per-field size caps. Firestore docs cap at 1MB total; these keep us far from that
+  // and shut down the "1MB utm_source" bloat vector.
+  const MAX = { name: 120, email: 254, utm: 80, referrer: 300, ua: 300, aliado: 60 };
+
+  // ---------- UTILS ----------
+  const cap = (v, n) => String(v == null ? '' : v).slice(0, n);
+  // Tolerant: accepts anything matching \w . _ - : / — strips script/HTML risks.
+  const safeParam = (v, n) => cap(String(v || '').replace(/[^\w.\-:/]/g, ''), n);
+  const sanitizeReferrer = (raw) => {
+    if (!raw) return '';
+    try {
+      const u = new URL(raw);
+      // Drop query + hash — those can carry tokens/PII from the referring page.
+      return cap(u.origin + u.pathname, MAX.referrer);
+    } catch { return ''; }
+  };
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
 
   // ---------- ATTRIBUTION ----------
+  // Only accept safe param values; cap lengths so a 1MB URL can't bloat Firestore.
   const urlParams = new URLSearchParams(location.search);
   const attribution = {
-    aliado: urlParams.get('id') || urlParams.get('aliado') || '',
-    utm_source: urlParams.get('utm_source') || '',
-    utm_medium: urlParams.get('utm_medium') || '',
-    utm_campaign: urlParams.get('utm_campaign') || '',
-    utm_term: urlParams.get('utm_term') || '',
-    utm_content: urlParams.get('utm_content') || '',
-    referrer: document.referrer || '',
-    landing: location.pathname + location.search,
+    aliado: safeParam(urlParams.get('id') || urlParams.get('aliado') || '', MAX.aliado),
+    utm_source: safeParam(urlParams.get('utm_source'), MAX.utm),
+    utm_medium: safeParam(urlParams.get('utm_medium'), MAX.utm),
+    utm_campaign: safeParam(urlParams.get('utm_campaign'), MAX.utm),
+    utm_term: safeParam(urlParams.get('utm_term'), MAX.utm),
+    utm_content: safeParam(urlParams.get('utm_content'), MAX.utm),
+    referrer: sanitizeReferrer(document.referrer),
+    landing: cap(location.pathname, MAX.referrer),
   };
 
   // ---------- STATE ----------
@@ -800,6 +730,14 @@ fbq('track', 'PageView');
     leadSent: saved?.leadSent || false,
   };
 
+  // Module-scoped analytics flags (no global pollution).
+  let trackedStart = false;
+  let trackedComplete = false;
+  // Tracks the most recent setTimeout scheduled by selectOption — cleared if
+  // the user navigates manually before it fires (fixes the "skip a question"
+  // race where fast Enter during the 320ms delay double-advances).
+  let advanceTimer = null;
+
   function persist() {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -809,9 +747,19 @@ fbq('track', 'PageView');
   }
 
   // ---------- ANALYTICS ----------
-  function track(name, params) {
-    try { if (window.gtag) window.gtag('event', name, params || {}); } catch {}
-    try { if (window.fbq) window.fbq('trackCustom', name, params || {}); } catch {}
+  // Standard FB events where possible so Ads Manager can optimize for them;
+  // GA4 gets custom names either way.
+  function trackStart() {
+    try { window.gtag && window.gtag('event', 'test_start'); } catch {}
+    try { window.fbq && window.fbq('trackCustom', 'test_start'); } catch {}
+  }
+  function trackComplete(perfil, servicio) {
+    try { window.gtag && window.gtag('event', 'test_completed', { perfil, servicio }); } catch {}
+    try { window.fbq && window.fbq('track', 'CompleteRegistration', { content_category: perfil, content_name: servicio }); } catch {}
+  }
+  function trackLead(perfil, servicio) {
+    try { window.gtag && window.gtag('event', 'lead_submitted', { perfil, servicio, value: 1, currency: 'USD' }); } catch {}
+    try { window.fbq && window.fbq('track', 'Lead', { content_category: perfil, content_name: servicio, value: 1, currency: 'USD' }); } catch {}
   }
 
   // ---------- RENDER ----------
@@ -819,25 +767,25 @@ fbq('track', 'PageView');
   const progressWrap = document.getElementById('progress-wrap');
   const progressFill = document.getElementById('progress-fill');
   const stepNum = document.getElementById('step-num');
+  const stepTotal = document.getElementById('step-total');
   const stepPct = document.getElementById('step-pct');
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
 
-  function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  // Sync hardcoded step total with actual data length.
+  stepTotal.textContent = String(state.total).padStart(2, '0');
 
   function renderIntro() {
     const el = document.createElement('section');
     el.className = 'slide';
     el.dataset.slide = 'intro';
     el.innerHTML = `
-      <span class="intro-eyebrow"><span translate="no">Test F.E.R.</span> · 7&nbsp;preguntas</span>
+      <span class="intro-eyebrow"><span translate="no">Test F.E.R.</span> · ${state.total}&nbsp;preguntas</span>
       <h1 class="intro-title">Descubrí qué <span class="ital">patrón</span> está influyendo hoy en tu relación con el dinero.</h1>
       <p class="lede">Este test no mide cuánto <strong>sabés</strong> de finanzas. Mide cómo estás <strong>decidiendo</strong> con tu dinero: desde tus emociones, tus hábitos y tu forma de actuar.</p>
       <div class="intro-meta">
         <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>3&nbsp;minutos</span>
-        <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4"/><path d="M12 2v13"/><path d="m7 10 5 5 5-5"/></svg>7&nbsp;preguntas</span>
+        <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4"/><path d="M12 2v13"/><path d="m7 10 5 5 5-5"/></svg>${state.total}&nbsp;preguntas</span>
         <span class="m"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Resultado inmediato</span>
       </div>
       <div class="intro-cta">
@@ -856,12 +804,13 @@ fbq('track', 'PageView');
     const el = document.createElement('section');
     el.className = 'slide';
     el.dataset.slide = 'q' + qIndex;
+    const groupLabel = 'q' + qIndex + '-label';
     el.innerHTML = `
-      <span class="q-label">Pregunta ${String(qIndex + 1).padStart(2,'0')}<span class="arrow"></span></span>
+      <span class="q-label" id="${groupLabel}">Pregunta ${String(qIndex + 1).padStart(2,'0')}<span class="arrow"></span></span>
       <h1 class="q-text">${escapeHtml(q.text)}</h1>
-      <div class="options">
+      <div class="options" role="radiogroup" aria-labelledby="${groupLabel}">
         ${q.options.map((o, i) => `
-          <button class="opt ${selected === o.code ? 'selected' : ''}" data-code="${o.code}" data-qindex="${qIndex}" aria-pressed="${selected === o.code ? 'true' : 'false'}">
+          <button class="opt ${selected === o.code ? 'selected' : ''}" role="radio" aria-checked="${selected === o.code ? 'true' : 'false'}" data-code="${o.code}" data-qindex="${qIndex}">
             <span class="opt-key" aria-hidden="true">${String.fromCharCode(65 + i)}</span>
             <span class="opt-text">${escapeHtml(o.text)}</span>
             <svg aria-hidden="true" class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -878,7 +827,7 @@ fbq('track', 'PageView');
     const answers = state.answers.filter(Boolean);
     const perfil = detectarPerfil(answers);
     const servicio = asignarServicio(answers, perfil);
-    const bloques = seleccionarBloques(answers);
+    const bloques = seleccionarBloques(answers, PRIORIDAD_BLOQUES);
     const cierre = CIERRES[servicio];
     const perfilData = PERFILES[perfil];
 
@@ -890,7 +839,7 @@ fbq('track', 'PageView');
       <h1 class="result-title">${escapeHtml(cierre.titulo)}</h1>
 
       <div class="profile-card">
-        <div class="label">Perfil dominante · ${perfil}</div>
+        <div class="label">Perfil dominante · ${escapeHtml(perfil)}</div>
         <div class="name">${escapeHtml(perfilData.nombre)}</div>
         <div class="desc">${escapeHtml(perfilData.texto)}</div>
       </div>
@@ -916,11 +865,11 @@ fbq('track', 'PageView');
         <div class="lead-fields">
           <div class="lead-field">
             <label for="lead-name">Nombre</label>
-            <input id="lead-name" name="name" type="text" autocomplete="given-name" required placeholder="Tu nombre…" />
+            <input id="lead-name" name="name" type="text" autocomplete="given-name" required maxlength="${MAX.name}" placeholder="Tu nombre…" />
           </div>
           <div class="lead-field">
             <label for="lead-email">Email</label>
-            <input id="lead-email" name="email" type="email" inputmode="email" autocomplete="email" required spellcheck="false" placeholder="tu@email.com" />
+            <input id="lead-email" name="email" type="email" inputmode="email" autocomplete="email" required spellcheck="false" maxlength="${MAX.email}" placeholder="tu@email.com" />
           </div>
         </div>
         <input class="lead-hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
@@ -958,13 +907,15 @@ fbq('track', 'PageView');
 
   // ---------- TRANSITIONS ----------
   let current = null;
-  function goTo(step, dir = 1) {
+  function goTo(step) {
     if (step < 0 || step > state.total + 1) return;
+    // Any manual navigation cancels a pending auto-advance so we never
+    // double-advance past the user's current slide.
+    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
     const prev = current;
     const next = buildSlide(step);
     stage.appendChild(next);
 
-    // force layout then activate
     requestAnimationFrame(() => {
       if (prev) {
         prev.classList.add('leaving');
@@ -979,9 +930,15 @@ fbq('track', 'PageView');
     updateChrome();
     wireSlide(next);
     persist();
-    if (state.step === 1 && !window.__trackedStart) { track('test_start'); window.__trackedStart = true; }
-    if (state.step === state.total + 1 && !window.__trackedComplete) { track('test_completed'); window.__trackedComplete = true; }
-    if (typeof window.__pmRegenerate === 'function') window.__pmRegenerate();
+    if (state.step === 1 && !trackedStart) { trackStart(); trackedStart = true; }
+    if (state.step === state.total + 1 && !trackedComplete) {
+      const answers = state.answers.filter(Boolean);
+      const perfil = detectarPerfil(answers);
+      const servicio = asignarServicio(answers, perfil);
+      trackComplete(perfil, servicio);
+      trackedComplete = true;
+    }
+    if (typeof Fer.pmRegenerate === 'function') Fer.pmRegenerate();
   }
 
   function updateChrome() {
@@ -1012,8 +969,9 @@ fbq('track', 'PageView');
         state.answers = new Array(QUESTIONS.length).fill(null);
         state.leadSent = false;
         try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
-        window.__trackedStart = false; window.__trackedComplete = false;
-        goTo(0, -1);
+        trackedStart = false;
+        trackedComplete = false;
+        goTo(0);
       });
       wireLeadForm(el);
       if (state.leadSent) showLeadSent(el);
@@ -1028,12 +986,20 @@ fbq('track', 'PageView');
     const code = btn.dataset.code;
     const qIndex = Number(btn.dataset.qindex);
     state.answers[qIndex] = code;
-    // reflect selection
     const slide = btn.closest('.slide');
-    slide.querySelectorAll('.opt').forEach(b => b.classList.toggle('selected', b === btn));
+    slide.querySelectorAll('.opt').forEach(b => {
+      const sel = b === btn;
+      b.classList.toggle('selected', sel);
+      b.setAttribute('aria-checked', sel ? 'true' : 'false');
+    });
     updateChrome();
-    // auto-advance with a short delay for feedback
-    setTimeout(() => {
+    if (advanceTimer) clearTimeout(advanceTimer);
+    const scheduledFrom = state.step;
+    advanceTimer = setTimeout(() => {
+      advanceTimer = null;
+      // User may have advanced manually in the meantime; only auto-advance if
+      // we're still on the slide the timer was scheduled for.
+      if (state.step !== scheduledFrom) return;
       if (state.step === state.total) goTo(state.total + 1);
       else goTo(state.step + 1);
     }, 320);
@@ -1045,6 +1011,111 @@ fbq('track', 'PageView');
     const sent = slide.querySelector('#lead-sent');
     if (form) form.hidden = true;
     if (sent) sent.hidden = false;
+  }
+
+  function buildPayload(name, email) {
+    const answers = state.answers.filter(Boolean);
+    const perfil = detectarPerfil(answers);
+    const servicio = asignarServicio(answers, perfil);
+    const bloques = seleccionarBloques(answers, PRIORIDAD_BLOQUES);
+    const perfilData = PERFILES[perfil];
+    const cierre = CIERRES[servicio];
+
+    const respuestasPorEje = {};
+    state.answers.forEach((code, i) => { respuestasPorEje['respuesta_' + (i + 1)] = code || ''; });
+
+    return {
+      name: cap(name, MAX.name),
+      // RFC 5321 allows case-sensitive localparts; in practice providers ignore
+      // case. Lowercase so CK/Firestore dedupe on "User@x" vs "user@x".
+      email: cap(email, MAX.email),
+      perfil,
+      perfil_nombre: perfilData.nombre,
+      servicio,
+      bloque_1_code: bloques[0] || '',
+      bloque_1_text: bloques[0] ? BLOQUES[bloques[0]] : '',
+      bloque_2_code: bloques[1] || '',
+      bloque_2_text: bloques[1] ? BLOQUES[bloques[1]] : '',
+      respuestas: answers.join(','),
+      ...respuestasPorEje,
+      cierre_titulo: cierre.titulo,
+      cierre_cta: cierre.cta,
+      ...attribution,
+      user_agent: cap(navigator.userAgent, MAX.ua),
+      lang: cap(navigator.language, 16),
+      submitted_at: new Date().toISOString(),
+    };
+  }
+
+  async function writeFirestore(payload) {
+    // Await readiness so a fast submit doesn't outrun the Firebase SDK import.
+    try { await Fer.fbReady; } catch {}
+    if (typeof Fer.fbSaveLead !== 'function') return false;
+    try {
+      await Fer.fbSaveLead(payload);
+      return true;
+    } catch (err) {
+      console.error('[lead] firestore error', err);
+      return false;
+    }
+  }
+
+  async function subscribeCK(payload) {
+    if (!CK_FORM_ID || !CK_API_KEY) {
+      console.warn('[lead] ConvertKit config missing — skipping subscribe');
+      return false;
+    }
+    try {
+      const body = new URLSearchParams({
+        api_key: CK_API_KEY,
+        first_name: payload.name,
+        email: payload.email,
+        'fields[perfil]': payload.perfil,
+        'fields[perfil_nombre]': payload.perfil_nombre,
+        'fields[servicio]': payload.servicio,
+        'fields[bloque_1]': payload.bloque_1_text,
+        'fields[bloque_2]': payload.bloque_2_text,
+        'fields[respuestas]': payload.respuestas,
+        'fields[aliado]': payload.aliado,
+        'fields[utm_source]': payload.utm_source,
+        'fields[utm_campaign]': payload.utm_campaign,
+        'fields[testrealizado]': payload.submitted_at.slice(0, 10),
+      });
+      const res = await fetch('https://api.convertkit.com/v3/forms/' + encodeURIComponent(CK_FORM_ID) + '/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      if (!res.ok) throw new Error('CK HTTP ' + res.status);
+      return true;
+    } catch (err) {
+      console.error('[lead] convertkit error', err);
+      return false;
+    }
+  }
+
+  async function submitLead(payload) {
+    const [fb, ck] = await Promise.all([writeFirestore(payload), subscribeCK(payload)]);
+    return { fbOk: fb === true, ckOk: ck === true };
+  }
+
+  // localStorage-backed retry queue: if both pipelines fail, we persist the
+  // payload across page loads so the lead can be re-sent on the next visit or
+  // via the retry button. This is what keeps leads from silently disappearing.
+  function savePending(payload) {
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(payload)); } catch {}
+  }
+  function getPending() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY)); } catch { return null; }
+  }
+  function clearPending() {
+    try { localStorage.removeItem(PENDING_KEY); } catch {}
+  }
+  async function flushPending() {
+    const p = getPending();
+    if (!p || !p.email) return;
+    const { fbOk, ckOk } = await submitLead(p);
+    if (fbOk || ckOk) clearPending();
   }
 
   function wireLeadForm(slide) {
@@ -1064,11 +1135,17 @@ fbq('track', 'PageView');
       });
     });
 
+    const resetButton = (labelText) => {
+      submitBtn.setAttribute('aria-busy', 'false');
+      submitBtn.disabled = false;
+      submitLabel.textContent = labelText;
+    };
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (honeypot.value) return; // bot caught
-      const name = nameInput.value.trim();
-      const email = emailInput.value.trim().toLowerCase();
+      const name = cap(nameInput.value.trim(), MAX.name);
+      const email = cap(emailInput.value.trim().toLowerCase(), MAX.email);
 
       if (!name) {
         nameInput.setAttribute('aria-invalid', 'true');
@@ -1087,103 +1164,34 @@ fbq('track', 'PageView');
       submitBtn.disabled = true;
       submitLabel.innerHTML = '<span class="spinner"></span> Enviando…';
 
+      const payload = buildPayload(name, email);
+      let result = { fbOk: false, ckOk: false };
       try {
-        await submitLead({ name, email });
+        result = await submitLead(payload);
       } catch (err) {
         console.error('[lead] submit error', err);
       }
-      // optimistic: show success regardless — lead is persisted locally and
-      // any transient pipeline failure is logged for recovery.
-      state.leadSent = true;
-      persist();
-      track('lead_submitted');
-      showLeadSent(slide);
+
+      if (result.fbOk || result.ckOk) {
+        clearPending();
+        state.leadSent = true;
+        persist();
+        trackLead(payload.perfil, payload.servicio);
+        showLeadSent(slide);
+        // Best-effort: if only CK landed, queue a Firestore retry for next load.
+        if (!result.fbOk) savePending(payload);
+      } else {
+        // Both pipelines failed. Keep payload for retry.
+        savePending(payload);
+        errorEl.textContent = 'No pudimos enviar tu resultado. Reintentá en unos segundos.';
+        resetButton('Reintentar');
+      }
     });
-  }
-
-  async function submitLead({ name, email }) {
-    const answers = state.answers.filter(Boolean);
-    const perfil = detectarPerfil(answers);
-    const servicio = asignarServicio(answers, perfil);
-    const bloques = seleccionarBloques(answers);
-    const perfilData = PERFILES[perfil];
-    const cierre = CIERRES[servicio];
-
-    const respuestasPorEje = {};
-    state.answers.forEach((code, i) => { respuestasPorEje['respuesta_' + (i + 1)] = code || ''; });
-
-    const payload = {
-      name, email,
-      perfil,
-      perfil_nombre: perfilData.nombre,
-      servicio,
-      bloque_1_code: bloques[0] || '',
-      bloque_1_text: bloques[0] ? BLOQUES[bloques[0]] : '',
-      bloque_2_code: bloques[1] || '',
-      bloque_2_text: bloques[1] ? BLOQUES[bloques[1]] : '',
-      respuestas: answers.join(','),
-      ...respuestasPorEje,
-      cierre_titulo: cierre.titulo,
-      cierre_cta: cierre.cta,
-      ...attribution,
-      user_agent: navigator.userAgent,
-      lang: navigator.language || '',
-      submitted_at: new Date().toISOString(),
-    };
-
-    // 1. Firestore write (source of truth)
-    const fbPromise = (async () => {
-      if (typeof window.__fbSaveLead !== 'function') return null;
-      try {
-        const id = await window.__fbSaveLead(payload);
-        return id;
-      } catch (err) {
-        console.error('[lead] firestore error', err);
-        return null;
-      }
-    })();
-
-    // 2. ConvertKit form subscribe (drives result email)
-    const ckPromise = (async () => {
-      if (!CK_FORM_ID || !CK_API_KEY) {
-        console.warn('[lead] ConvertKit config missing — skipping subscribe');
-        return null;
-      }
-      try {
-        const body = new URLSearchParams({
-          api_key: CK_API_KEY,
-          first_name: name,
-          email,
-          'fields[perfil]': perfil,
-          'fields[perfil_nombre]': perfilData.nombre,
-          'fields[servicio]': servicio,
-          'fields[bloque_1]': payload.bloque_1_text,
-          'fields[bloque_2]': payload.bloque_2_text,
-          'fields[respuestas]': payload.respuestas,
-          'fields[aliado]': attribution.aliado,
-          'fields[utm_source]': attribution.utm_source,
-          'fields[utm_campaign]': attribution.utm_campaign,
-          'fields[testrealizado]': new Date().toISOString().slice(0, 10),
-        });
-        const res = await fetch('https://api.convertkit.com/v3/forms/' + CK_FORM_ID + '/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: body.toString(),
-        });
-        if (!res.ok) throw new Error('CK HTTP ' + res.status);
-        return await res.json();
-      } catch (err) {
-        console.error('[lead] convertkit error', err);
-        return null;
-      }
-    })();
-
-    await Promise.allSettled([fbPromise, ckPromise]);
   }
 
   // ---------- NAV / KEYBOARD ----------
   prevBtn.addEventListener('click', () => {
-    if (state.step > 0) goTo(state.step - 1, -1);
+    if (state.step > 0) goTo(state.step - 1);
   });
   nextBtn.addEventListener('click', () => {
     if (nextBtn.disabled) return;
@@ -1194,31 +1202,32 @@ fbq('track', 'PageView');
     }
   });
 
+  const typingSelector = 'input, textarea, select';
   document.addEventListener('keydown', (e) => {
+    // Never hijack keys while the user is typing in a form field.
+    if (e.target && e.target.matches && e.target.matches(typingSelector)) return;
+
     if (state.step >= 1 && state.step <= state.total) {
       const q = QUESTIONS[state.step - 1];
       if (e.key === 'a' || e.key === 'A' || e.key === '1') {
         const btn = current?.querySelector('.opt[data-code="'+q.options[0].code+'"]');
-        if (btn) selectOption(btn);
-        e.preventDefault(); return;
+        if (btn) { selectOption(btn); e.preventDefault(); }
+        return;
       }
       if (e.key === 'b' || e.key === 'B' || e.key === '2') {
         const btn = current?.querySelector('.opt[data-code="'+q.options[1].code+'"]');
-        if (btn) selectOption(btn);
-        e.preventDefault(); return;
+        if (btn) { selectOption(btn); e.preventDefault(); }
+        return;
       }
     }
     if (e.key === 'Enter') {
-      if (!nextBtn.disabled) nextBtn.click();
-      e.preventDefault();
+      // If focus is on an interactive element, let its default click fire.
+      if (e.target && e.target.matches && e.target.matches('button, a')) return;
+      if (!nextBtn.disabled) { nextBtn.click(); e.preventDefault(); }
     } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === 'PageDown') {
-      if (!nextBtn.disabled) nextBtn.click();
-      e.preventDefault();
+      if (!nextBtn.disabled) { nextBtn.click(); e.preventDefault(); }
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || e.key === 'PageUp') {
-      if (!prevBtn.disabled) prevBtn.click();
-      e.preventDefault();
-    } else if (e.key === 'Escape') {
-      // no-op
+      if (!prevBtn.disabled) { prevBtn.click(); e.preventDefault(); }
     }
   });
 
@@ -1227,15 +1236,18 @@ fbq('track', 'PageView');
     const s = state.step;
     if (!s || s < 0) return 0;
     if (s > state.total + 1) return state.total + 1;
-    // Resuming on the result slide requires every question answered.
     if (s === state.total + 1 && state.answers.some(a => !a)) return 0;
-    // Resuming mid-test requires all prior questions answered.
     if (s >= 2 && s <= state.total && state.answers.slice(0, s - 1).some(a => !a)) return 0;
     return s;
   })();
-  if (resumeStep >= 1) window.__trackedStart = true; // don't double-fire start on resume
-  if (resumeStep >= state.total + 1) window.__trackedComplete = true;
+  if (resumeStep >= 1) trackedStart = true;
+  if (resumeStep >= state.total + 1) trackedComplete = true;
   goTo(resumeStep);
+
+  // Background: retry any lead that got stranded on a previous visit.
+  // Runs after init so it can't block first paint.
+  setTimeout(flushPending, 1500);
+})();
 </script>
 
 <script>
@@ -1294,8 +1306,9 @@ fbq('track', 'PageView');
     setup(); rebuild(); draw();
 
     // Expose: swap to a new random pattern with a gentle fade.
+    window.Fer = window.Fer || {};
     let swapT;
-    window.__pmRegenerate = function () {
+    Fer.pmRegenerate = function () {
       if (!canvas.isConnected) return;
       canvas.classList.add('is-swapping');
       clearTimeout(swapT);
@@ -1306,9 +1319,10 @@ fbq('track', 'PageView');
       }, 350);
     };
 
+    let resizeT;
     window.addEventListener('resize', () => {
-      clearTimeout(window.__pmT);
-      window.__pmT = setTimeout(() => { setup(); rebuild(); draw(); }, 120);
+      clearTimeout(resizeT);
+      resizeT = setTimeout(() => { setup(); rebuild(); draw(); }, 120);
     });
   })();
 </script>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>F.E.R. test — logic spec</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; background: #0f1a3d; color: #e4d6ff; padding: 24px; }
+  h1 { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0 0 20px; color: #fff; font-size: 22px; }
+  pre { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; border-radius: 10px; white-space: pre-wrap; }
+  .ok { color: #9afdb0; }
+  .fail { color: #ff7a8a; font-weight: 600; }
+  .summary { margin-top: 18px; font-size: 15px; }
+  .summary.pass { color: #9afdb0; }
+  .summary.fail { color: #ff7a8a; }
+  a { color: #c9b0f5; }
+</style>
+</head>
+<body>
+<h1>F.E.R. test — logic spec</h1>
+<p>Pure-function tests for <code>Fer.logic</code> against <code>Fer.data</code>. Open this file in a browser. No build step.</p>
+<pre id="out"></pre>
+<p style="margin-top:24px;"><a href="test.html">← Back to the test</a></p>
+
+<script src="test.data.js"></script>
+<script src="test.logic.js"></script>
+<script>
+(() => {
+  const out = document.getElementById('out');
+  const results = [];
+  let passed = 0, failed = 0;
+
+  function eq(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  function t(name, fn) {
+    try {
+      const out = fn();
+      if (out === false) throw new Error('returned false');
+      results.push({ ok: true, name });
+      passed++;
+    } catch (err) {
+      results.push({ ok: false, name, msg: err.message });
+      failed++;
+    }
+  }
+
+  const { detectarPerfil, asignarServicio, seleccionarBloques } = Fer.logic;
+  const { PRIORIDAD_BLOQUES, QUESTIONS, PERFILES, BLOQUES, CIERRES } = Fer.data;
+
+  // ---- detectarPerfil ----
+  t('P1 when all of F,K,N present', () => eq(detectarPerfil(['F','K','N']), 'P1'));
+  t('P1 with any 2 of F,K,N', () => eq(detectarPerfil(['F','K','A']), 'P1'));
+  t('P1 with F+N only', () => eq(detectarPerfil(['F','N','A','D']), 'P1'));
+  t('P2 when all of B,H,N present (no F/K)', () => eq(detectarPerfil(['B','H','N']), 'P2'));
+  t('P2 with any 2 of B,H,N (no F/K)', () => eq(detectarPerfil(['B','H','A']), 'P2'));
+  t('P1 beats P2 on tie (N counts for both)', () => eq(detectarPerfil(['F','N','B','H']), 'P1'));
+  t('P3 when all of C,G,M present', () => eq(detectarPerfil(['C','G','M']), 'P3'));
+  t('P3 with any 2 of C,G,M', () => eq(detectarPerfil(['C','G','A']), 'P3'));
+  t('P2 beats P3 on order', () => eq(detectarPerfil(['B','H','C','G']), 'P2'));
+  t('P0 when no rule matches', () => eq(detectarPerfil(['A','D','E','I','L']), 'P0'));
+  t('P0 when only 1 of each set', () => eq(detectarPerfil(['F','B','C']), 'P0'));
+  t('P0 on empty answers', () => eq(detectarPerfil([]), 'P0'));
+  t('P0 tolerates unknown codes', () => eq(detectarPerfil(['X','Y','Z']), 'P0'));
+
+  // ---- asignarServicio ----
+  t('P2 with neither F nor K → impulso', () => eq(asignarServicio(['B','H','N'], 'P2'), 'impulso'));
+  t('P2 with F → desbloqueo', () => eq(asignarServicio(['B','H','F'], 'P2'), 'desbloqueo'));
+  t('P2 with K → desbloqueo', () => eq(asignarServicio(['B','K','N'], 'P2'), 'desbloqueo'));
+  t('P2 with F and K → desbloqueo', () => eq(asignarServicio(['F','K','B','H'], 'P2'), 'desbloqueo'));
+  t('P1 → desbloqueo', () => eq(asignarServicio(['F','K','N'], 'P1'), 'desbloqueo'));
+  t('P3 → desbloqueo', () => eq(asignarServicio(['C','G','M'], 'P3'), 'desbloqueo'));
+  t('P0 → desbloqueo', () => eq(asignarServicio([], 'P0'), 'desbloqueo'));
+
+  // ---- seleccionarBloques ----
+  t('picks J,K when both answered', () => eq(seleccionarBloques(['A','B','J','K'], PRIORIDAD_BLOQUES), ['J','K']));
+  t('respects priority order (J > A)', () => eq(seleccionarBloques(['A','J'], PRIORIDAD_BLOQUES), ['J','A']));
+  t('caps at 2 results', () => eq(seleccionarBloques(['J','K','F','N','H','C'], PRIORIDAD_BLOQUES).length, 2));
+  t('empty input → empty output', () => eq(seleccionarBloques([], PRIORIDAD_BLOQUES), []));
+  t('single answer returns array of 1', () => eq(seleccionarBloques(['M'], PRIORIDAD_BLOQUES), ['M']));
+
+  // ---- data integrity ----
+  t('14 bloques defined', () => eq(Object.keys(BLOQUES).length, 14));
+  t('4 perfiles defined', () => eq(Object.keys(PERFILES).length, 4));
+  t('2 cierres defined', () => eq(Object.keys(CIERRES).length, 2));
+  t('priority list covers all 14 codes', () => eq(PRIORIDAD_BLOQUES.length, 14) && eq(new Set(PRIORIDAD_BLOQUES).size, 14));
+  t('7 questions defined', () => eq(QUESTIONS.length, 7));
+  t('each question has 2 options with unique codes', () => QUESTIONS.every(q => q.options.length === 2 && q.options[0].code !== q.options[1].code));
+  t('every question code maps to a bloque', () => QUESTIONS.every(q => q.options.every(o => BLOQUES[o.code])));
+
+  // ---- integration: a known "desbloqueo + J,K" path ----
+  t('full flow: all answers → expected perfil+servicio+bloques', () => {
+    const respuestas = ['A','C','F','G','J','K','M']; // F+K → P1; J,K top priority
+    const perfil = detectarPerfil(respuestas);
+    const servicio = asignarServicio(respuestas, perfil);
+    const bloques = seleccionarBloques(respuestas, PRIORIDAD_BLOQUES);
+    return eq(perfil, 'P1') && eq(servicio, 'desbloqueo') && eq(bloques, ['J','K']);
+  });
+
+  t('full flow: P2-impulso path', () => {
+    const respuestas = ['B','C','E','H','I','L','N']; // B+H+N → P2, no F/K → impulso
+    const perfil = detectarPerfil(respuestas);
+    const servicio = asignarServicio(respuestas, perfil);
+    return eq(perfil, 'P2') && eq(servicio, 'impulso');
+  });
+
+  // render output
+  const lines = results.map(r => r.ok
+    ? `<span class="ok">✓</span> ${r.name}`
+    : `<span class="fail">✗ ${r.name}</span>  — ${r.msg || ''}`);
+  out.innerHTML = lines.join('\n');
+
+  const summary = document.createElement('div');
+  summary.className = 'summary ' + (failed === 0 ? 'pass' : 'fail');
+  summary.textContent = `\n${passed} passed, ${failed} failed.`;
+  out.appendChild(summary);
+
+  if (failed === 0) document.title = '✅ ' + document.title;
+  else document.title = `❌ ${failed} failing — ` + document.title;
+})();
+</script>
+</body>
+</html>

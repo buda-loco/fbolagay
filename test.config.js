@@ -6,7 +6,26 @@
 // documented as public identifiers — security comes from:
 //   1. HTTP referrer restriction on the Firebase API key (GCP Console →
 //      APIs & Services → Credentials → edit the auto-created "Browser key").
-//   2. Firestore security rules locked to `create` only on `test_respuestas`.
+//   2. Firestore security rules. Deploy these (Firebase Console → Firestore →
+//      Rules → paste → Publish):
+//
+//        rules_version = '2';
+//        service cloud.firestore {
+//          match /databases/{database}/documents {
+//            match /test_respuestas/{doc} {
+//              allow create: if
+//                   request.resource.data.email is string
+//                && request.resource.data.email.size() <= 254
+//                && request.resource.data.email.matches('.*@.*\\..*')
+//                && request.resource.data.name is string
+//                && request.resource.data.name.size() <= 120
+//                && request.resource.data.keys().size() <= 40
+//                && request.time < timestamp.date(2099, 1, 1);
+//              allow read, update, delete: if false;
+//            }
+//          }
+//        }
+//
 //   3. ConvertKit form ID + public key together only allow form subscription
 //      (no reads, no writes against other data).
 window.__FER_CONFIG = {

@@ -791,7 +791,9 @@ fbq('track', 'PageView');
   //      email template in spec section 9.
   //   2. On the Subscriber level in CK, register these custom fields so the
   //      field values survive the subscribe call:
-  //        perfil, perfil_nombre, servicio, bloque_1, bloque_2,
+  //        perfil, perfil_nombre, perfil_texto, servicio,
+  //        bloque_1, bloque_2,
+  //        respuesta_1..respuesta_7, texto_1..texto_7,
   //        respuestas, aliado, utm_source, utm_campaign, testrealizado
   //   3. Build the new email automation (Desbloqueo / Impulso) in CK using
   //      those fields as liquid tags. Trigger it on "subscribed to form".
@@ -1150,8 +1152,16 @@ fbq('track', 'PageView');
     const perfilData = PERFILES[perfil];
     const cierre = CIERRES[servicio];
 
-    const respuestasPorEje = {};
-    state.answers.forEach((code, i) => { respuestasPorEje['respuesta_' + (i + 1)] = code || ''; });
+    // Resolve each axis answer to both its code and its bloque text. The
+    // texto_* fields are what the ConvertKit long-email template renders as
+    // "Tu lectura por ejes: 1..7" (see spec section 12). Sending the
+    // pre-resolved copy keeps the CK Liquid template dumb — no dictionary
+    // lookups needed on their side.
+    const perEje = {};
+    state.answers.forEach((code, i) => {
+      perEje['respuesta_' + (i + 1)] = code || '';
+      perEje['texto_' + (i + 1)] = code && BLOQUES[code] ? BLOQUES[code] : '';
+    });
 
     return {
       name: cap(name, MAX.name),
@@ -1160,13 +1170,14 @@ fbq('track', 'PageView');
       email: cap(email, MAX.email),
       perfil,
       perfil_nombre: perfilData.nombre,
+      perfil_texto: perfilData.texto,
       servicio,
       bloque_1_code: bloques[0] || '',
       bloque_1_text: bloques[0] ? BLOQUES[bloques[0]] : '',
       bloque_2_code: bloques[1] || '',
       bloque_2_text: bloques[1] ? BLOQUES[bloques[1]] : '',
       respuestas: answers.join(','),
-      ...respuestasPorEje,
+      ...perEje,
       cierre_titulo: cierre.titulo,
       cierre_cta: cierre.cta,
       ...attribution,
@@ -1195,12 +1206,13 @@ fbq('track', 'PageView');
       return false;
     }
     try {
-      const body = new URLSearchParams({
+      const fields = {
         api_key: CK_API_KEY,
         first_name: payload.name,
         email: payload.email,
         'fields[perfil]': payload.perfil,
         'fields[perfil_nombre]': payload.perfil_nombre,
+        'fields[perfil_texto]': payload.perfil_texto,
         'fields[servicio]': payload.servicio,
         'fields[bloque_1]': payload.bloque_1_text,
         'fields[bloque_2]': payload.bloque_2_text,
@@ -1209,7 +1221,12 @@ fbq('track', 'PageView');
         'fields[utm_source]': payload.utm_source,
         'fields[utm_campaign]': payload.utm_campaign,
         'fields[testrealizado]': payload.submitted_at.slice(0, 10),
-      });
+      };
+      for (let i = 1; i <= 7; i++) {
+        fields['fields[texto_' + i + ']'] = payload['texto_' + i] || '';
+        fields['fields[respuesta_' + i + ']'] = payload['respuesta_' + i] || '';
+      }
+      const body = new URLSearchParams(fields);
       const res = await fetch('https://api.convertkit.com/v3/forms/' + encodeURIComponent(CK_FORM_ID) + '/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

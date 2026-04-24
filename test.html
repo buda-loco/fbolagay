@@ -71,8 +71,8 @@
     display: flex; align-items: center; justify-content: space-between;
     gap: 24px;
   }
-  .logo-mark { display: inline-flex; align-items: center; }
-  .logo-mark img { height: 40px; width: auto; display: block; filter: invert(1) brightness(1.1); }
+  .logo-mark { display: inline-flex; align-items: center; gap: 14px; }
+  .logo-mark img { height: 56px; width: auto; display: block; filter: brightness(0) invert(1); }
   .exit {
     color: var(--muted);
     text-decoration: none;
@@ -441,7 +441,6 @@
 
   @media (max-width: 560px) {
     .shell { padding: 20px 18px 18px; }
-    .logo-mark img { height: 32px; }
     h1.q-text, h1.intro-title, h1.result-title { font-size: 32px; }
     .opt { padding: 14px 16px; font-size: 15px; }
     .nav-hint { display: none; }
@@ -454,9 +453,13 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
-    .pm-right { display: none; }
     .btn-blue:hover, .btn-yellow:hover { transform: none; }
   }
+
+  .pm-right {
+    transition: opacity 0.35s ease;
+  }
+  .pm-right.is-swapping { opacity: 0; }
 
   /* hide scrollbars within slides but keep scrolling */
   .slide::-webkit-scrollbar { width: 4px; }
@@ -471,7 +474,7 @@
 
   <header>
     <a href="index.html" class="logo-mark" aria-label="Fer Bolagay" translate="no">
-      <img src="assets/logo-horizontal.png" alt="Fer Bolagay" width="160" height="40" />
+      <img src="assets/logo-horizontal.png" alt="Fer Bolagay" width="224" height="56" />
     </a>
     <a href="index.html" class="exit" title="Salir del test">
       <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -766,6 +769,7 @@
     current = next;
     updateChrome();
     wireSlide(next);
+    if (typeof window.__pmRegenerate === 'function') window.__pmRegenerate();
   }
 
   function updateChrome() {
@@ -864,18 +868,16 @@
 </script>
 
 <script>
-  // --- Pattern marquee (right side, tiled grid, bottom -> top) ---
-  (function patternMarquee() {
+  // --- Pattern grid (right side, static, re-randomized per slide) ---
+  (function patternGrid() {
     const PALETTE = ['#E3EA00', '#D5B4FB', '#EFEEEA', '#283287', '#000000', '#ffffff'];
     const KINDS = ['square','square','square','quarter','quarter','half','circle','empty'];
     const QC_PATH = new Path2D('M0,0 L0,178.5 L178.5,178.5 C178.5,80 98.5,0 0,0 Z');
-    function rand(a,b){ return a + Math.random()*(b-a); }
     function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
     const canvas = document.getElementById('pat-right');
     if (!canvas) return;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let ctx, w, h, cellSize, cols, rows, strips, offset = 0, rafId = null;
+    let ctx, w, h, cellSize, cols, rows, strips;
 
     function setup() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -893,9 +895,8 @@
     function rebuild() {
       cols = Math.max(1, Math.round(w / 70));
       cellSize = w / cols;
-      rows = Math.ceil(h / cellSize) + 3;
+      rows = Math.ceil(h / cellSize) + 1;
       strips = []; for (let i=0;i<rows;i++) strips.push(makeRow(cols));
-      offset = 0;
     }
     function drawCell(cell, x, y, size) {
       if (cell.kind === 'empty') return;
@@ -910,11 +911,7 @@
       else if (cell.kind === 'half') { ctx.beginPath(); ctx.arc(size/2, size, size/2, Math.PI, 0); ctx.closePath(); ctx.fill(); }
       ctx.restore();
     }
-
-    setup(); rebuild();
-    const SPEED = 26;
-    let last = performance.now();
-    function drawStatic() {
+    function draw() {
       ctx.clearRect(0,0,w,h);
       for (let r=0; r<strips.length; r++) {
         const y = r * cellSize;
@@ -922,36 +919,25 @@
         for (let c=0; c<row.length; c++) drawCell(row[c], c*cellSize, y, cellSize);
       }
     }
-    function frame(now) {
-      const dt = Math.min(0.1, (now - last)/1000);
-      last = now;
-      offset += SPEED * dt;
-      while (offset >= cellSize) {
-        offset -= cellSize;
-        strips.shift(); strips.push(makeRow(cols));
-      }
-      ctx.clearRect(0,0,w,h);
-      for (let r=0; r<strips.length; r++) {
-        const y = r * cellSize - offset;
-        const row = strips[r];
-        for (let c=0; c<row.length; c++) drawCell(row[c], c*cellSize, y, cellSize);
-      }
-      rafId = requestAnimationFrame(frame);
-    }
-    function start() {
-      if (reduceMotion.matches) { drawStatic(); return; }
-      last = performance.now();
-      rafId = requestAnimationFrame(frame);
-    }
-    function stop() {
-      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    }
-    start();
-    reduceMotion.addEventListener('change', () => { stop(); start(); });
+
+    setup(); rebuild(); draw();
+
+    // Expose: swap to a new random pattern with a gentle fade.
+    let swapT;
+    window.__pmRegenerate = function () {
+      if (!canvas.isConnected) return;
+      canvas.classList.add('is-swapping');
+      clearTimeout(swapT);
+      swapT = setTimeout(() => {
+        rebuild();
+        draw();
+        canvas.classList.remove('is-swapping');
+      }, 350);
+    };
 
     window.addEventListener('resize', () => {
       clearTimeout(window.__pmT);
-      window.__pmT = setTimeout(() => { stop(); setup(); rebuild(); start(); }, 120);
+      window.__pmT = setTimeout(() => { setup(); rebuild(); draw(); }, 120);
     });
   })();
 </script>

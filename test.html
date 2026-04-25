@@ -285,6 +285,19 @@ fbq('track', 'PageView');
     background: rgba(201,176,245,0.06);
   }
   .opt:hover .opt-key { background: var(--lilac); color: var(--ink); border-color: var(--lilac); }
+  /* Neutralize hover until the user actually moves the mouse over the fresh
+     slide. Without this, the cursor sitting in the same place after auto-
+     advance triggers a hover state on the new question's option, which reads
+     as a phantom "previous answer" selection. */
+  .slide.no-hover .opt:hover {
+    border-color: var(--line);
+    background: rgba(255,255,255,0.03);
+  }
+  .slide.no-hover .opt:hover .opt-key {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--line);
+  }
   .opt:focus-visible {
     outline: none;
     border-color: var(--focus);
@@ -1110,6 +1123,17 @@ fbq('track', 'PageView');
       el.querySelectorAll('.opt').forEach(btn => {
         btn.addEventListener('click', () => selectOption(btn));
       });
+      // Suppress hover styling until the user actually moves their mouse on
+      // this slide — otherwise a cursor parked over the previous question's
+      // option position would visually highlight the new question's option in
+      // the same spot, looking like a pre-selected answer.
+      el.classList.add('no-hover');
+      const clearNoHover = () => {
+        el.classList.remove('no-hover');
+        el.removeEventListener('mousemove', clearNoHover);
+      };
+      el.addEventListener('mousemove', clearNoHover);
+      setTimeout(clearNoHover, 600);
     }
   }
 

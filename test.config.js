@@ -45,7 +45,7 @@ window.__FER_CONFIG = {
   // → "Inbound Webhook" → copy the generated URL into the field below.
   // Format: https://services.leadconnectorhq.com/hooks/<locationId>/webhook-trigger/<webhookId>
   gohighlevel: {
-    webhookUrl: 'https://services.leadconnectorhq.com/hooks/MolUd9Q2LR8SjcuZyDeC/webhook-trigger/501ddbef-327c-43a9-8406-b6a9c03725df',
+    webhookUrl: 'https://services.leadconnectorhq.com/hooks/MolUd9Q2LR8SjcuZyDeC/webhook-trigger/71418191-e7f5-4bce-ab84-0cfd1ba22b46',
   },
   firestore: {
     collection: 'test_respuestas',

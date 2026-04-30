@@ -2,8 +2,10 @@
 // Loaded by test.html before the Firebase module boots.
 //
 // NOTE: For a static site, any value in this file is visible in the deployed
-// browser source. The Firebase apiKey and ConvertKit public api_key are both
-// documented as public identifiers — security comes from:
+// browser source. The Firebase apiKey is a public identifier (Google docs
+// it as such); the GoHighLevel inbound-webhook URL is also browser-safe by
+// design — it only accepts inbound POSTs into the workflow you bound it to.
+// Defense-in-depth checklist:
 //   1. HTTP referrer restriction on the Firebase API key (GCP Console →
 //      APIs & Services → Credentials → edit the auto-created "Browser key").
 //   2. Firestore security rules. Deploy these (Firebase Console → Firestore →
@@ -26,8 +28,8 @@
 //          }
 //        }
 //
-//   3. ConvertKit form ID + public key together only allow form subscription
-//      (no reads, no writes against other data).
+//   3. GoHighLevel: rotate the webhook URL if it leaks (Workflows → your
+//      workflow → Inbound Webhook trigger → "Regenerate URL").
 window.__FER_CONFIG = {
   firebase: {
     apiKey: 'AIzaSyBj9X3tpqgIEYLyfGZpuBe33qnNsvg4-Hw',
@@ -38,11 +40,12 @@ window.__FER_CONFIG = {
     appId: '1:44330468225:web:70af0b32cb2f4b262e9e80',
     measurementId: 'G-CRJ0582LNY',
   },
-  // TODO: replace with the new F.E.R.-test-specific ConvertKit form + verify
-  // the automation in CK uses the custom fields listed in test.html.
-  convertkit: {
-    formId: '5366078',
-    apiKey: 'LRpn9kJWEXGg_mlr_kp2vg',
+  // GoHighLevel inbound webhook URL.
+  // Get it from: Automations → Workflows → New Workflow → "Add New Trigger"
+  // → "Inbound Webhook" → copy the generated URL into the field below.
+  // Format: https://services.leadconnectorhq.com/hooks/<locationId>/webhook-trigger/<webhookId>
+  gohighlevel: {
+    webhookUrl: '',
   },
   firestore: {
     collection: 'test_respuestas',
